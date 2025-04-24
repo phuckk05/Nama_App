@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1073568082924",
+    "project_id": "nama-4c04f",
+    "storage_bucket": "nama-4c04f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1073568082924:android:8eb90989906d99d73f2ec9",
+        "android_client_info": {
+          "package_name": "com.example.nama_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxAbA4MY5Pi3z8uiaz0odQwkK2FPfogUo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

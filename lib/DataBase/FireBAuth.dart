@@ -1,0 +1,582 @@
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server/gmail.dart';
+
+class Firebauth {
+  String generateVerificationCode(int length) {
+    const chars = '0123456789';
+    Random random = Random();
+    return List.generate(
+      length,
+      (index) => chars[random.nextInt(chars.length)],
+    ).join();
+  }
+
+  Future<void> sendVerificationEmail(
+    String recipientEmail,
+    String verificationCode,
+  ) async {
+    String username = '23211TT4425@mail.tdc.edu.vn';
+    String password = 'drvh lhel chui kfga';
+
+    final smtpServer = gmail(username, password); // Sử dụng server Gmail
+
+    final message =
+        Message()
+          ..from = Address(username, 'Nama') // Tên của ứng dụng bạn
+          ..recipients.add(recipientEmail)
+          ..subject = 'Mã xác thực của bạn'
+          ..text = 'Mã xác thực của bạn là: $verificationCode';
+
+    try {
+      final sendReport = await send(message, smtpServer);
+      print('Email gửi thành công: ' + sendReport.toString());
+    } catch (e) {
+      print('Lỗi khi gửi email: $e');
+    }
+  }
+
+  Future<int> checkUsers(String email) async {
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .limit(1)
+            .get();
+
+    if (result.docs.isNotEmpty) {
+      // Email đã tồn tại
+      return 1;
+    } else {
+      // Email chưa tồn tại
+      return 0;
+    }
+  }
+
+  Future<void> registerWithEmail(String email, BuildContext context) async {
+    try {
+      // Tạo mã xác nhận ngẫu nhiên
+      String verificationCode = generateVerificationCode(6);
+
+      // Gửi mã xác thực qua email
+      await sendVerificationEmail(email, verificationCode);
+
+      // Lưu mã vào Firestore (tuỳ chọn)
+      await FirebaseFirestore.instance.collection('verification_codes').add({
+        'email': email,
+        'code': verificationCode,
+        'createdAt': Timestamp.now(),
+      });
+
+      print('Mã xác thực tồn tại 60 giây đã được gửi tới email');
+    } catch (e) {
+      print('Lỗi đăng ký: $e');
+    }
+  }
+
+  Future<void> TimeCode(String email) async {
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance
+            .collection('verification_codes')
+            .where('email', isEqualTo: email)
+            .get();
+
+    if (result.docs.isNotEmpty) {
+      for (var doc in result.docs) {
+        await doc.reference.delete();
+      }
+    }
+  }
+
+  Future<void> checkCode(
+    String email,
+    String code,
+    BuildContext context,
+  ) async {
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance
+            .collection('verification_codes')
+            .where('email', isEqualTo: email)
+            .where('code', isEqualTo: code)
+            .limit(1)
+            .get();
+
+    if (result.docs.isNotEmpty) {
+      String code = generateVerificationCode(5);
+      await FirebaseFirestore.instance.collection('users').add({
+        'email': email,
+        'image': "https://i.pinimg.com/736x/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg",
+        'name': "user_${code.toString()}",
+        'createdAt': Timestamp.now(),
+      });
+
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Center(child: Text('Đăng kí thành công!'))),
+      // );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Center(child: Text('Sai code , thử lại !'))),
+      );
+    }
+  }
+  //them lich su tim kiem 
+  Future<void> ThemHistory(String email, String nameSearch) async {
+    await FirebaseFirestore.instance.collection('history').add({
+      "name": nameSearch,
+      "email": email,
+    });
+  }
+ 
+  //lay lich su tim kiem 
+  Future<void> LayHistory(String email, List<Map<String, dynamic>> list) async {
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance
+            .collection('history')
+            .where('email', isEqualTo: email)
+            .get();
+    if (result.docs.isNotEmpty) {
+      for (var doc in result.docs) {
+        list.addAll([
+          {"name": doc['name']},
+        ]);
+      }
+    }
+  }
+  //kiem tra code
+  Future<int> checkCodeLogin(String email, String code) async {
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance
+            .collection('verification_codes')
+            .where('email', isEqualTo: email)
+            .orderBy('createdAt', descending: true)
+            .limit(1)
+            .get();
+
+    if (result.docs.isNotEmpty) {
+      final data = result.docs.first.data() as Map<String, dynamic>;
+      final latestCode = data['code'];
+
+      if (latestCode == code) {
+        return 1; // Đúng mã mới nhất
+      } else {
+        return 0; // Sai mã
+      }
+    } else {
+      return 0; // Không tìm thấy mã nào
+    }
+  }
+ 
+  // Future<void> verifyCode(String enteredCode, String email) async {
+  //   // Lấy mã xác thực từ Firestore
+  //   var snapshot =
+  //       await FirebaseFirestore.instance
+  //           .collection('verification_codes')
+  //           .where('email', isEqualTo: email)
+  //           .orderBy('createdAt', descending: true)
+  //           .limit(1)
+  //           .get();
+
+  //   if (snapshot.docs.isNotEmpty) {
+  //     String storedCode = snapshot.docs.first['code'];
+  //     if (enteredCode == storedCode) {
+  //       print('Mã xác thực đúng!');
+  //       // Tiến hành đăng nhập hoặc xác nhận
+  //     } else {
+  //       print('Mã xác thực sai!');
+  //     }
+  //   } else {
+  //     print('Không tìm thấy mã xác thực cho email này');
+  //   }
+  // }
+  //kiem tra dang nhap 
+  Future<int> CheckLoGin(String email, BuildContext context) async {
+    final QuerySnapshot result =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .get();
+
+    if (result.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Center(child: Text('Kiểm tra hộp thư mã tồn tại 60 giây')),
+        ),
+      );
+      await registerWithEmail(email, context);
+
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+
+
+ //xoa lich su tim kiem 
+  Future<void> XoaHistory(String email) async {
+    final result =
+        await FirebaseFirestore.instance
+            .collection('history')
+            .where('email', isEqualTo: email)
+            .get();
+
+    if (result.docs.isNotEmpty) {
+      for (var doc in result.docs) {
+        await doc.reference.delete();
+      }
+    }
+  }
+
+  //lay tat cả sản phẩm
+  Future<void> getAllProducts(List<Map<String, dynamic>> items) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance.collection('products').get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "name": doc['name'],
+            "id": doc['id'],
+            "price": doc['price'],
+            "total": doc['total'],
+            "email": doc['email'] ?? 'khong-co-email',
+            "address": doc['address'],
+            "type": doc['type'],
+            "imageUrl": doc['imageUrl'],
+            "createdAt": doc['createdAt'],
+            "description": doc['description'],
+          },
+        ]);
+      }
+    }
+  }
+  //update all products 
+  Future<void> UpdatedInforProducts(String email, id, total, imageUrl, name, price, type, address,mota) async {
+    String reslut = await UID(id.toString());
+      // print(uId.toString());
+    
+      await FirebaseFirestore.instance.collection('products').doc(reslut).set({
+           "name": name,
+            "id": id,
+            "price": price,
+            "total": total,
+            "email": email,
+            "address": address,
+            "type": type,
+            "imageUrl": imageUrl,
+            "createdAt": Timestamp.now(),
+            "description": mota,
+      });
+    
+  } 
+
+  //lay san pham theo user
+  Future<int> getAllProductsUser(
+    List<Map<String, dynamic>> items,
+    String email,
+  ) async {
+    int count = 0;
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('products')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "name": doc['name'],
+            "id": doc['id'],
+            "price": doc['price'],
+            "total": doc['total'],
+            "email": doc['email'] ?? 'khong-co-email',
+            "address": doc['address'],
+            "type": doc['type'],
+            "imageUrl": doc['imageUrl'],
+            "createdAt": doc['createdAt'],
+            "description": doc['description'],
+          },
+        ]);
+        count++;
+      }
+      return count;
+    }
+    return 0;
+  }
+
+  //lay san pham trong xem san pham
+  Future<String> showProducts(
+    String id,
+    List<Map<String, dynamic>> items,
+  ) async {
+    String? nameUser;
+    String? total;
+    String? result;
+    String? decription;
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('products')
+            .where('id', isEqualTo: id)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "name": doc['name'],
+            "id": doc['id'],
+            "price": doc['price'],
+            "total": doc['total'],
+            "email": doc['email'] ?? 'khong-co-email',
+            "address": doc['address'],
+            "type": doc['type'],
+            "imageUrl": doc['imageUrl'],
+            "createdAt": doc['createdAt'],
+            "description": doc['description'],
+          },
+        ]);
+      }
+
+      nameUser = await getName(items[0]['email']);
+      total = await getToTalProducts(items[0]['email']);
+
+      result = "${nameUser.toString()}:${total.toString()}";
+      print(decription.toString());
+    }
+    return result.toString();
+  }
+
+  //lay name user
+  Future<String> getName(String email) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: email.toString())
+            .get();
+    if (_query.docs.isNotEmpty) {
+      String result = _query.docs.first.get('name');
+      return result;
+    }
+    return "NO";
+  }
+
+  //lay tong so san pham
+  Future<String> getToTalProducts(String email) async {
+    int i = 0;
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('products')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        i++;
+      }
+      return i.toString();
+    }
+
+    return "0";
+  }
+
+  //theo vao carts
+  Future<void> saveCarts(String email, id, total, imageUrl, name, price) async {
+    String reslut = await UpdatedTotal(id.toString());
+    List<String> tach = reslut.split(':');
+    String? totalOut = tach[0].toString();
+    String? uId = tach[1].toString();
+        print(reslut);
+    print(totalOut.toString());
+      // print(uId.toString());
+    if (totalOut == "0") {
+      await FirebaseFirestore.instance.collection('carts').add({
+        "email": email,
+        "id": id,
+        "total": total,
+        "imageUrl": imageUrl,
+        "name": name,
+        "price": price,
+      });
+    } else {
+      int tong = int.parse(totalOut) + 1;
+      await FirebaseFirestore.instance.collection('carts').doc(tach[1]).set({
+         "email": email,
+        "id": id,
+        "total": tong.toString(),
+        "imageUrl": imageUrl,
+        "name": name,
+        "price": price,
+      });
+    }
+  }
+
+  //show sản phẩm vào giỏ hàng
+  Future<void> getSaveCarts(
+    List<Map<String, dynamic>> items,
+    String email,
+  ) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('carts')
+            .where('email', isEqualTo: email)
+            .get();
+
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "email": doc['email'],
+            "id": doc['id'],
+            "total": doc['total'],
+            "imageUrl": doc['imageUrl'],
+            "name": doc['name'],
+            "price": doc['price'],
+          },
+        ]);
+      }
+    }
+  }
+
+  //su ly them nhieu lan 1 san pham
+  Future<String> UpdatedTotal(String id) async {
+    String? reslut;
+    String? docID ="0";
+    String _count;
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('carts')
+            .where('id', isEqualTo: id)
+            .get();
+    if (_query.docs.isNotEmpty) {
+       docID = _query.docs.first.id;
+         _count=_query.docs.first.get('total');
+      reslut="${_count}:${docID}";
+    }
+    else{
+      reslut = "0:0";
+    }
+
+    return reslut.toString();
+  }
+
+  //lay UID products by user
+   Future<String> UID(String id) async {
+    String? reslut;
+    String? docID ="0";
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('products')
+            .where('id', isEqualTo: id)
+            .get();
+    if (_query.docs.isNotEmpty) {
+       docID = _query.docs.first.id;
+      reslut="${docID}";
+    }
+    else{
+      reslut = "0:0";
+    }
+
+    return reslut.toString();
+  }
+
+  //xử lý sự kiện xóa sản phẩm trong giỏ hàng
+
+  Future<void> DeleteCarts(String id) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('carts')
+            .where('id', isEqualTo: id)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var item in _query.docs) {
+        await item.reference.delete();
+      }
+    }
+  }
+
+
+  //kiểm tra tự đặt hàng , có cùng người dùng hay không ?
+
+  Future<int> CheckOrder(String email) async{
+    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('products').where('email', isEqualTo:email).get();
+    if(_query.docs.isNotEmpty){
+      return 0;
+    }
+    return 1;
+  }
+
+  //lấy tất cả thông tin user bằng email
+  
+  Future<String> GetAllUser(String email) async{
+    String? _docID ="0";
+    String? _result;
+    String? _imageUrl;
+    String? _name;
+    Timestamp _timeStamp;
+    
+    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('users').where('email',isEqualTo:email).get();
+    if(_query.docs.isNotEmpty){
+        _docID = _query.docs.first.id;
+        _imageUrl=_query.docs.first.get('image');
+       _name = _query.docs.first.get('name');
+       _timeStamp = _query.docs.first.get('createdAt');
+
+       _result = "${_docID}+${_imageUrl}+${_name}+${_timeStamp}";
+
+       return _result.toString();
+    }
+    return "0";
+  }
+
+
+  //thêm địa chỉ giao hàng 
+  Future<void> SaveAddress(String email, String name,String  address, String telephone) async{
+    String? _id = generateVerificationCode(10);
+     await FirebaseFirestore.instance.collection('address').add(
+      {
+        "id":_id,
+        "email":email,
+        "address":address,
+        "name" :name,
+        "telephone":telephone
+      }
+    );
+  }
+
+  //lấy địa chiwr từ firebase 
+
+  Future<List<Map<String, dynamic>>> GetAddress(String email, ) async{
+    List<Map<String, dynamic>>items =[];
+    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('address').where('email',isEqualTo: email).get();
+    if(_query.docs.isNotEmpty){
+      for(var doc in _query.docs){
+        items.addAll(
+          [
+            {
+               "id":doc['id'],
+               "email" :doc['email'],
+                "address":doc['address'],
+                "name":doc['name'],
+                "telephone":doc['telephone']
+            }
+          ]
+        );
+      }
+    }
+   return items;
+
+  }
+
+      //xóa địa chỉ
+      Future<void> DeleteAddress(String id) async{
+        final QuerySnapshot _query = await FirebaseFirestore.instance.collection('address').where('id', isEqualTo: id).get();
+        if(_query.docs.isNotEmpty){
+           for( var item in _query.docs){
+              await item.reference.delete();
+           }
+        }
+      }
+
+
+}
