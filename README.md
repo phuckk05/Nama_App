@@ -1,6 +1,8 @@
 # nama_app
 
-A new Flutter project.
+A new Flutter project 
+
+this project is pro
 
 ## Getting Started
 
