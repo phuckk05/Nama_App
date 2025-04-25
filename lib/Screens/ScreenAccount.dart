@@ -220,7 +220,11 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
               leading: Icon(Icons.logout, color: Colors.red),
               title: Text("Đăng xuất", style: TextStyle(color: Colors.red)),
               onTap: () {
-                _XoaUser();
+                showDialog(
+                  context: context,
+                   builder:(context) {
+                    return _Warning(context);
+                },);
               },
             ),
           ],
@@ -228,7 +232,7 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
       ),
     );
   }
-
+  //build title
   Widget buildTile(int index, IconData icon, String title) {
     return InkWell(
       onTap: () {
@@ -245,4 +249,75 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
       ),
     );
   }
+
+
+// ignore: non_constant_identifier_names
+Widget _Warning(BuildContext context) {
+  return Dialog(
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.question_mark,
+            color: Colors.redAccent,
+            size: 60,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Bạn có chắc chắn muốn đăng xuất?',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: AppStyle.fontFamily,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Quay lại',
+                    style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _XoaUser();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text('Đồng ý', style: TextStyle(fontWeight: FontWeight.bold),),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    ),
+  );
+}
+
 }
