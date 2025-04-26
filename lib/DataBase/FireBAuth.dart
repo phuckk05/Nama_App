@@ -498,8 +498,8 @@ class Firebauth {
 
   //kiểm tra tự đặt hàng , có cùng người dùng hay không ?
 
-  Future<int> CheckOrder(String email) async{
-    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('products').where('email', isEqualTo:email).get();
+  Future<int> CheckOrder(String email, String id) async{
+    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('products').where('email', isEqualTo:email, ).where('id', isEqualTo:id, ).get();
     if(_query.docs.isNotEmpty){
       return 0;
     }

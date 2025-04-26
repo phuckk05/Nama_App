@@ -4,6 +4,7 @@ import 'package:nama_app/DataBase/Sqlite.dart';
 import 'package:nama_app/Screens/ScreenAddress.dart';
 import 'package:nama_app/Screens/ScreenInformation.dart';
 import 'package:nama_app/Screens/ScreenLogin.dart';
+import 'package:nama_app/Screens/ScreenOrder.dart';
 import 'package:nama_app/Screens/ScreenPayment.dart';
 import 'package:nama_app/Screens/ScreenProcessScreen.dart';
 import 'package:nama_app/Screens/ScreenSetting.dart';
@@ -69,8 +70,11 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
     } else if(index ==3){
        Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienDiaChi(email: widget.email.toString(),)));
     }
-    else{
+    else if(index == 4){
       Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienCaiDat()));
+    }
+    else{
+       Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienDonHang()));
     }
     });
     
@@ -202,6 +206,9 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
                 ],
               ),
             ),
+               
+                buildTile(5, Icons.production_quantity_limits, "Đơn hàng"),
+            Divider(height: 1, indent: 55),
               buildTile(1, Icons.edit, "Thông tin cá nhân"),
             Divider(height: 1, indent: 55),
             buildTile(2, Icons.payment, "Phương thức thanh toán"),

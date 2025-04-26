@@ -77,14 +77,14 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Thông tin sản phẩm đăng bán',
+                    'Thông báo sản phẩm đăng bán',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.black54,
                     ),
                   ),
                   Text(
-                    'Xem tất cả',
+                    'Xem đơn đặt hàng',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.blue,
@@ -101,26 +101,50 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
 
             decoration: BoxDecoration(color: Colors.grey[400]),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: Text(
-                    'Thông tin đơn đặt hàng',
+                    'Cập nhật đơn đặt hàng',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.black54,
                     ),
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Row(
+                    children: [
+                      // Text(
+                      //   'Quản lý',
+                      //   style: TextStyle(
+                      //     fontWeight: FontWeight.bold,
+                      //     color: Colors.blue,
+                      //   ),
+                      // ),
+                      SizedBox(width: 20),
+                      Text(
+                        'Xem đơn hàng',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          Expanded(flex: 5, child: Center(child: Text('hello'))),
+          Expanded(flex: 5, child: _ThongTinDonDatHang()),
         ],
       ),
     );
   }
 
+  //danh sach sản phẩm
   Widget _danhSachThongBaoSanPham() {
     return ListView.builder(
       itemCount: 10,
@@ -189,6 +213,83 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _ThongTinDonDatHang() {
+    return ListView.builder(
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 5, left: 0, right: 0),
+              child: Container(
+                width: double.infinity,
+
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black54, // màu đổ bóng
+                      blurRadius: 1, // độ mờ của bóng
+                      offset: Offset(0, 1), // đẩy bóng xuống dưới
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "User_4376743",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                            TextSpan(
+                              text: " đã xác nhân đơn hàng của bạn ",
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  
+                      // SizedBox(width: 10),
+                      // SizedBox(
+                      //   width: 100,
+                      //   child: FloatingActionButton(
+                      //     mini: true,
+                      //     elevation: 5,
+                      //     onPressed: () {},
+                      //     child: Text('Xóa'),
+                      //   ),
+                      // ),
+                      Text(
+                        '1 ngày trước',
+                        style: TextStyle(
+                          color: Colors.black26,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

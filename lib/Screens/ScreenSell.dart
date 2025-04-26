@@ -360,7 +360,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                     onTap: ShowColor2,
                   ),
                   tabItem(
-                    title: 'Xem thống kê',
+                    title: 'Đã bán',
                     color: isColorTab3,
                     borderColor: isBottom3,
                     onTap: ShowColor3,
@@ -752,9 +752,15 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                     ? listChieuCao[index]['chieucao$index']
                     : 120,
             decoration: BoxDecoration(
-              color: Colors.cyanAccent,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.black, width: 2),
+              boxShadow: [
+               BoxShadow(
+                blurRadius: 10,
+                color: Colors.black54,
+                offset: Offset(1, 5)
+               )
+              ]
             ),
             child: Column(
               children: [

@@ -28,6 +28,8 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
   String? name;
   String? total;
   String? decription;
+  int _soLuong = 1;
+  Color _colorIconTru = Colors.black45;
   List<Color> listColor = [
     Colors.lightGreenAccent,
     Colors.green,
@@ -57,7 +59,7 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
   }
 
   void LuuSanPham() async {
-    int _checkOr = await _firebauth.CheckOrder(widget.email.toString());
+    int _checkOr = await _firebauth.CheckOrder(widget.email.toString(), items[0]['id']);
     if (_checkOr == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -84,6 +86,26 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
     }
   }
 
+  void CheckMuaSanPham(List<Map<String, dynamic>> items) async {
+    int _checkOr = await _firebauth.CheckOrder(widget.email.toString(), items[0]['id']);
+    if (_checkOr == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Center(
+            child: Text('Bạn không thể tự đặt sản phẩm của mình'),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return _SoLuong(context, items);
+        },
+      );
+    }
+  }
+
   void LoadTienDo() {
     timer = Timer.periodic(Duration(milliseconds: 1), (timer) {
       setState(() {
@@ -92,6 +114,20 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
           _tienDo = 0.0;
         }
       });
+    });
+  }
+
+  void TruSL() {
+    if (_soLuong > 1) {
+      setState(() {
+        _soLuong = _soLuong - 1;
+      });
+    }
+  }
+
+  void CongSL() {
+    setState(() {
+      _soLuong = _soLuong + 1;
     });
   }
 
@@ -239,20 +275,33 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                 ],
               ),
             ),
-        Divider(),
-         Padding(
-           padding: const EdgeInsets.only(left: 10, top: 5, bottom: 5),
-           child: Align(
-            alignment: Alignment.centerLeft,
-            child:  RichText(text: TextSpan(
-              children: [
-                TextSpan(text: "Địa chỉ : ", style: TextStyle(color: Colors.blueGrey)),
-                items.isNotEmpty? TextSpan(text: "${items[0]['address'].toString()}",style: TextStyle(color: Colors.black)) : TextSpan(text: "??",style: TextStyle(color: Colors.black)),
-              ]
-            )),
-           ),
-         ),
-          Divider(),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, top: 5, bottom: 5),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "Địa chỉ : ",
+                        style: TextStyle(color: Colors.blueGrey),
+                      ),
+                      items.isNotEmpty
+                          ? TextSpan(
+                            text: "${items[0]['address'].toString()}",
+                            style: TextStyle(color: Colors.black),
+                          )
+                          : TextSpan(
+                            text: "??",
+                            style: TextStyle(color: Colors.black),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Divider(),
             // Divider(endIndent: 10, indent: 10),
             // ListTile(
             //   leading: Icon(Icons.local_shipping_outlined),
@@ -669,11 +718,13 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                 ),
                 Expanded(
                   flex: 5,
-                  child: Container(
-                    color: Colors.green,
-                    child: Center(
-                      child: GestureDetector(
-                        onTap: () {},
+                  child: InkWell(
+                    onTap: () {
+                      CheckMuaSanPham(items);
+                    },
+                    child: Container(
+                      color: Colors.green,
+                      child: Center(
                         child: Text(
                           'Mua Ngay',
                           style: TextStyle(
@@ -691,6 +742,365 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
         ),
       ),
       drawer: Search(email: widget.email.toString()),
+    );
+  }
+
+  //so luong roi mua nay
+  Widget _SoLuong(BuildContext context, List<Map<String, dynamic>> items) {
+    return StatefulBuilder(
+      builder: (context, setStateBottom) {
+        return Container(
+          height: 550,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(15),
+              topRight: Radius.circular(15),
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      height: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            10,
+                          ), // Bo tròn ảnh
+                          child:
+                              items.isNotEmpty
+                                  ? Image.network(
+                                    items[0]['imageUrl'],
+                                    fit: BoxFit.fill,
+                                  )
+                                  : Image.asset(
+                                    'lib/Image/nen.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 0),
+                      child: Container(
+                        height: 160, // Thêm height cho đều với bên trái
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Stack(
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+
+                              children: [
+                                Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child:
+                                      items.isNotEmpty
+                                          ? Text(
+                                            '${items[0]['price']} đ',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                          : Text(
+                                            '99999999 đ',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              color: Colors.red,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                ),
+
+                                Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child:
+                                      items.isNotEmpty
+                                          ? Text(
+                                            'Kho : ${items[0]['total']}',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black54,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                          : Text(
+                                            'Kho : đang tải lên...',
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black54,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                ),
+                                SizedBox(height: 15),
+                              ],
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: IconButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                },
+
+                                icon: Icon(Icons.close, size: 30),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              Divider(height: 1),
+
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 10,
+                  right: 10,
+                  top: 5,
+                  bottom: 5,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Số lượng ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        SizedBox(width: 10),
+                        IconButton(
+                          onPressed: () {
+                            setStateBottom(() {
+                              TruSL();
+                            });
+                          },
+                          icon: Icon(Icons.remove),
+                        ),
+
+                        SizedBox(
+                          height: 40,
+                          width: 100,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black, width: 1),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Text('$_soLuong'),
+                            ),
+                          ),
+                        ),
+
+                        IconButton(
+                          onPressed: () {
+                            setStateBottom(() {
+                              CongSL();
+                            });
+                          },
+                          icon: Icon(Icons.add),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: double.infinity,
+                height: 10,
+                color: Colors.grey[300],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Sản phẩm khác của shop',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 10, top: 0, right: 0),
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          height: 130,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black54,
+                                blurRadius: 50,
+                                offset: Offset(7, 5),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(0.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                10,
+                              ), // Bo tròn ảnh
+                              child: Image.asset(
+                                'lib/Image/nen.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          height: 130,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black54,
+                                blurRadius: 50,
+                                offset: Offset(7, 5),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(0.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                10,
+                              ), // Bo tròn ảnh
+                              child: Image.asset(
+                                'lib/Image/nen.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          height: 130,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black54,
+                                blurRadius: 50,
+                                offset: Offset(7, 5),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(0.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                10,
+                              ), // Bo tròn ảnh
+                              child: Image.asset(
+                                'lib/Image/nen.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                          height: 130,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black54,
+                                blurRadius: 50,
+                                offset: Offset(7, 5),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(0.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                10,
+                              ), // Bo tròn ảnh
+                              child: Image.asset(
+                                'lib/Image/nen.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 50),
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () {},
+                    child: Text(
+                      'Mua ngay',
+                      style: TextStyle(
+                        fontSize: AppStyle.textSizeMedium,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
