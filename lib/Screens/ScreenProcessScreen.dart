@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/Screens/ScreenAccount.dart';
 import 'package:nama_app/Screens/ScreenHome.dart';
 import 'package:nama_app/Screens/ScreenNofi.dart';
@@ -14,25 +15,54 @@ class ProcessSccreen extends StatefulWidget {
 }
 
 class _ProcessSccreenState extends State<ProcessSccreen> {
-  //lits kiểu widget chưa các screens
- late final  List<Widget> listScreen = [
-    GiaoDienHome(email: widget.email),
-    GiaoDienBan(email: widget.email),
-    GiaoDienThongBao(email: widget.email),
-    GiaoDienTaiKhoan(email: widget.email),
-  ];
+  Firebauth firebaseAuth = Firebauth();
   int _slectedIndex = 0;
+  List<Widget>? listScreen = [];
+ 
+
+  //hiện thị dữ liệu trước cho giao diện thông báo 
+  void layThongTinChoGiaoDienThongBao() async {
+    List<Map<String, dynamic>>? itemsSell = [];
+    List<Map<String, dynamic>>? itemsBuy = [];
+    itemsSell = await firebaseAuth.GetOrderByEmailBuy(widget.email.toString());
+    itemsBuy = await firebaseAuth.GetOrderByEmailBuy2(widget.email.toString());
+
+    itemsBuy.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['createdAt']);
+      DateTime dateB = DateTime.parse(b['createdAt']);
+      return dateB.compareTo(dateA);
+    });
+
+    setState(() {
+      listScreen = [
+        GiaoDienHome(email: widget.email),
+        GiaoDienBan(email: widget.email),
+        GiaoDienThongBao(email: widget.email, items: itemsSell, itemsBuy: itemsBuy),
+        GiaoDienTaiKhoan(email: widget.email),
+      ];
+    });
+  }
+
   void SetIndex(int value) {
+    layThongTinChoGiaoDienThongBao();
     setState(() {
       _slectedIndex = value;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+     layThongTinChoGiaoDienThongBao();
   }
 
   Color clIcon = Colors.green;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-    body: listScreen[_slectedIndex],
+      body: listScreen != null && listScreen!.isNotEmpty
+          ? listScreen![_slectedIndex]
+          : const Center(child: CircularProgressIndicator()),
       backgroundColor: AppStyle.backgroundColor,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _slectedIndex,
@@ -65,5 +95,3 @@ class _ProcessSccreenState extends State<ProcessSccreen> {
     );
   }
 }
-
-

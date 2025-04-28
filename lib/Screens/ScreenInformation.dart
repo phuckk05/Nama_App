@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:nama_app/API/imageAPI.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
@@ -17,11 +18,14 @@ class GiaoDienThongTin extends StatefulWidget {
 class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
   Cloudinary _imageAPI = Cloudinary();
   Firebauth _firebauth = Firebauth();
+  FocusNode _focusNode = FocusNode();
   File? _image;
   int? _selectedIndex;
+  double chieuCao = 250;
   String? _result;
   List<String> _split = [];
   String? _url;
+
   final _text = TextEditingController();
   //ham lấy ảnh
   Future<void> pickImageFromGallery() async {
@@ -48,6 +52,7 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
       if (index == 1) {
         showModalBottomSheet(
           context: context,
+          isScrollControlled: true,
           builder: (BuildContext context) {
             return ChinhSuaThongTin(context);
           },
@@ -61,6 +66,24 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
   void initState() {
     super.initState();
     _Lay_Thong_Tin_User();
+    SetChieuCao();
+  }
+  
+  //bắt sự kiện khi focus vào textflied 
+  void SetChieuCao(){
+    _focusNode = FocusNode();
+    _focusNode.addListener((){
+      if(_focusNode.hasFocus){
+          setState(() {
+            chieuCao = 550;
+          });
+      }
+      else{
+            setState(() {
+            chieuCao = 250;
+          });
+      }
+    });
   }
 
   //lấy thông tin users
@@ -98,11 +121,11 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
               padding: const EdgeInsets.only(top: 10, bottom: 10),
               child: Text(
                 'Sửa thông tin',
-                style: TextStyle(
-                  fontSize: AppStyle.textSizeTitle,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: GoogleFonts.robotoSlab(
+                    fontSize: AppStyle.textSizeTitle,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
+                  ),
               ),
             ),
           ),
@@ -237,7 +260,7 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
   Widget ChinhSuaThongTin(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(16),
-      height: 250,
+      height: chieuCao,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -261,6 +284,7 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
           ),
           SizedBox(height: 10),
           TextField(
+            focusNode: _focusNode,
             controller: _text,
             decoration: InputDecoration(labelText: 'Nhập Tên mới'),
           ),

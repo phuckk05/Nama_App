@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nama_app/API/imageAPI.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/Pemisstion/PermissionHandler.dart';
@@ -25,6 +26,8 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
   bool load = true;
   String? selectedCategory;
   Icon iconsLoc = Icon(Icons.filter_alt_off, size: 25);
+  // int line = 1;
+   
   List<String> categories = [
     'Thời trang',
     'Đồ gia dụng',
@@ -291,7 +294,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.white,
         actions: [
           Expanded(
             flex: 15,
@@ -299,14 +302,14 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
               padding: const EdgeInsets.only(left: 15, right: 5),
               child: IconButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              ProcessSccreen(email: widget.email.toString()),
-                    ),
-                  );
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder:
+                  //         (context) =>
+                  //             ProcessSccreen(email: widget.email.toString()),
+                  //   ),
+                  // );
                 },
                 icon: Icon(Icons.arrow_back_ios, color: Colors.white),
               ),
@@ -316,12 +319,14 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
             flex: 70,
             child: Padding(
               padding: const EdgeInsets.only(top: 10, bottom: 10),
-              child: Text(
-                'Sản phẩm',
-                style: TextStyle(
-                  fontSize: AppStyle.textSizeTitle,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+              child: Center(
+                child: Text(
+                  'Sản phẩm',
+                  style: GoogleFonts.robotoSlab(
+                    fontSize: AppStyle.textSizeTitle,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ),
@@ -332,7 +337,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: IconButton(
                 onPressed: () {},
-                icon: Icon(Icons.search, size: 30, color: Colors.green),
+                icon: Icon(Icons.search, size: 30, color: Colors.white),
               ),
             ),
           ),
@@ -341,6 +346,11 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+          width: double.infinity,
+          height: 10,
+          color: Colors.grey[500],
+          ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Padding(
@@ -646,8 +656,10 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
     double a,
     double b,
     int index,
+    int line,
     TextEditingController textT,
   ) {
+   
     return Row(
       children: [
         Expanded(
@@ -657,6 +669,8 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
             child: TextField(
               readOnly: control,
               controller: textT,
+              maxLines: line,
+              minLines: line,
               decoration: InputDecoration(
                 contentPadding: EdgeInsets.only(bottom: 10, left: 10),
                 border: OutlineInputBorder(
@@ -672,6 +686,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
                 ),
+                
               ),
             ),
           ),
@@ -776,6 +791,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                       ListChinhSua[index]['setpaddingleft$index'],
                       ListChinhSua[index]['setpaddingright$index'],
                       index,
+                      2,
                       ListControler[index]['ten$index']
                           as TextEditingController,
                     ),
@@ -903,6 +919,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                                   ListChinhSua[index]['setpaddingleft$index'],
                                   ListChinhSua[index]['setpaddingright$index'],
                                   index,
+                                  2,
                                   ListControler[index]['ten$index']
                                       as TextEditingController,
                                 ),
@@ -917,6 +934,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                                 ListChinhSua[index]['setpaddingleft$index'],
                                 ListChinhSua[index]['setpaddingright$index'],
                                 index,
+                                1,
                                 ListControler[index]['gia$index']
                                     as TextEditingController,
                               ),
@@ -928,6 +946,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                                 ListChinhSua[index]['setpaddingleft$index'],
                                 ListChinhSua[index]['setpaddingright$index'],
                                 index,
+                                1,
                                 ListControler[index]['soluong$index']
                                     as TextEditingController,
                               ),
@@ -942,6 +961,7 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                                   ListChinhSua[index]['setpaddingleft$index'],
                                   ListChinhSua[index]['setpaddingright$index'],
                                   index,
+                                  3,
                                   ListControler[index]['mota$index']
                                       as TextEditingController,
                                 ),
@@ -954,9 +974,11 @@ class _GiaoDienBanState extends State<GiaoDienBan> {
                                   "Địa chỉ ",
                                   '${item[index]['address']}',
                                   Colors.black,
+                                  
                                   ListChinhSua[index]['setpaddingleft$index'],
                                   ListChinhSua[index]['setpaddingright$index'],
                                   index,
+                                  2,
                                   ListControler[index]['diachi$index']
                                       as TextEditingController,
                                 ),

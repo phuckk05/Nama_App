@@ -65,24 +65,24 @@ class _GiaoDienHomeState extends State<GiaoDienHome> {
   void initState() {
     super.initState();
     DeXuat();
-      fetchProducts();
+    fetchProducts();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-  
   }
 
   @override
   void dispose() {
-    _deXuatTimer?.cancel(); 
+    _deXuatTimer?.cancel();
     super.dispose();
   }
 
   void DeXuat() {
     int i = 0;
-    _deXuatTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+    // setState(() {});
+    _deXuatTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -152,7 +152,14 @@ class _GiaoDienHomeState extends State<GiaoDienHome> {
               ),
               IconButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienGioHang(email: widget.email.toString(),)));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              GiaoDienGioHang(email: widget.email.toString()),
+                    ),
+                  );
                 },
                 icon: Icon(
                   Icons.shopping_cart_outlined,
@@ -413,8 +420,9 @@ class _GiaoDienHomeState extends State<GiaoDienHome> {
                                       text: TextSpan(
                                         children: [
                                           TextSpan(
+                                            
                                             text:
-                                                "${items[index]["price"].toString()} VND",
+                                                "${items[index]["price"].toString()} đ",
                                             style: TextStyle(
                                               fontSize: 22,
                                               color: Colors.red,
@@ -435,6 +443,8 @@ class _GiaoDienHomeState extends State<GiaoDienHome> {
                                     bottom: 0,
                                   ),
                                   child: Text(
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     'Số lượng : ${items[index]["total"]!}',
                                     style: TextStyle(
                                       fontSize: AppStyle.textSizeMedium,

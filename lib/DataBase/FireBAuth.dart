@@ -1,10 +1,10 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
+import 'package:nama_app/Models/Order.dart';
 
 class Firebauth {
   String generateVerificationCode(int length) {
@@ -109,7 +109,8 @@ class Firebauth {
       String code = generateVerificationCode(5);
       await FirebaseFirestore.instance.collection('users').add({
         'email': email,
-        'image': "https://i.pinimg.com/736x/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg",
+        'image':
+            "https://i.pinimg.com/736x/c6/e5/65/c6e56503cfdd87da299f72dc416023d4.jpg",
         'name': "user_${code.toString()}",
         'createdAt': Timestamp.now(),
       });
@@ -123,15 +124,16 @@ class Firebauth {
       );
     }
   }
-  //them lich su tim kiem 
+
+  //them lich su tim kiem
   Future<void> ThemHistory(String email, String nameSearch) async {
     await FirebaseFirestore.instance.collection('history').add({
       "name": nameSearch,
       "email": email,
     });
   }
- 
-  //lay lich su tim kiem 
+
+  //lay lich su tim kiem
   Future<void> LayHistory(String email, List<Map<String, dynamic>> list) async {
     final QuerySnapshot result =
         await FirebaseFirestore.instance
@@ -146,6 +148,7 @@ class Firebauth {
       }
     }
   }
+
   //kiem tra code
   Future<int> checkCodeLogin(String email, String code) async {
     final QuerySnapshot result =
@@ -169,7 +172,7 @@ class Firebauth {
       return 0; // Không tìm thấy mã nào
     }
   }
- 
+
   // Future<void> verifyCode(String enteredCode, String email) async {
   //   // Lấy mã xác thực từ Firestore
   //   var snapshot =
@@ -192,7 +195,7 @@ class Firebauth {
   //     print('Không tìm thấy mã xác thực cho email này');
   //   }
   // }
-  //kiem tra dang nhap 
+  //kiem tra dang nhap
   Future<int> CheckLoGin(String email, BuildContext context) async {
     final QuerySnapshot result =
         await FirebaseFirestore.instance
@@ -214,8 +217,7 @@ class Firebauth {
     }
   }
 
-
- //xoa lich su tim kiem 
+  //xoa lich su tim kiem
   Future<void> XoaHistory(String email) async {
     final result =
         await FirebaseFirestore.instance
@@ -253,25 +255,35 @@ class Firebauth {
       }
     }
   }
-  //update all products 
-  Future<void> UpdatedInforProducts(String email, id, total, imageUrl, name, price, type, address,mota) async {
+
+  //update all products
+  Future<void> UpdatedInforProducts(
+    String email,
+    id,
+    total,
+    imageUrl,
+    name,
+    price,
+    type,
+    address,
+    mota,
+  ) async {
     String reslut = await UID(id.toString());
-      // print(uId.toString());
-    
-      await FirebaseFirestore.instance.collection('products').doc(reslut).set({
-           "name": name,
-            "id": id,
-            "price": price,
-            "total": total,
-            "email": email,
-            "address": address,
-            "type": type,
-            "imageUrl": imageUrl,
-            "createdAt": Timestamp.now(),
-            "description": mota,
-      });
-    
-  } 
+    // print(uId.toString());
+
+    await FirebaseFirestore.instance.collection('products').doc(reslut).set({
+      "name": name,
+      "id": id,
+      "price": price,
+      "total": total,
+      "email": email,
+      "address": address,
+      "type": type,
+      "imageUrl": imageUrl,
+      "createdAt": Timestamp.now(),
+      "description": mota,
+    });
+  }
 
   //lay san pham theo user
   Future<int> getAllProductsUser(
@@ -386,9 +398,9 @@ class Firebauth {
     List<String> tach = reslut.split(':');
     String? totalOut = tach[0].toString();
     String? uId = tach[1].toString();
-        print(reslut);
+    print(reslut);
     print(totalOut.toString());
-      // print(uId.toString());
+    // print(uId.toString());
     if (totalOut == "0") {
       await FirebaseFirestore.instance.collection('carts').add({
         "email": email,
@@ -401,7 +413,7 @@ class Firebauth {
     } else {
       int tong = int.parse(totalOut) + 1;
       await FirebaseFirestore.instance.collection('carts').doc(tach[1]).set({
-         "email": email,
+        "email": email,
         "id": id,
         "total": tong.toString(),
         "imageUrl": imageUrl,
@@ -441,7 +453,7 @@ class Firebauth {
   //su ly them nhieu lan 1 san pham
   Future<String> UpdatedTotal(String id) async {
     String? reslut;
-    String? docID ="0";
+    String? docID = "0";
     String _count;
     final QuerySnapshot _query =
         await FirebaseFirestore.instance
@@ -449,11 +461,10 @@ class Firebauth {
             .where('id', isEqualTo: id)
             .get();
     if (_query.docs.isNotEmpty) {
-       docID = _query.docs.first.id;
-         _count=_query.docs.first.get('total');
-      reslut="${_count}:${docID}";
-    }
-    else{
+      docID = _query.docs.first.id;
+      _count = _query.docs.first.get('total');
+      reslut = "${_count}:${docID}";
+    } else {
       reslut = "0:0";
     }
 
@@ -461,19 +472,18 @@ class Firebauth {
   }
 
   //lay UID products by user
-   Future<String> UID(String id) async {
+  Future<String> UID(String id) async {
     String? reslut;
-    String? docID ="0";
+    String? docID = "0";
     final QuerySnapshot _query =
         await FirebaseFirestore.instance
             .collection('products')
             .where('id', isEqualTo: id)
             .get();
     if (_query.docs.isNotEmpty) {
-       docID = _query.docs.first.id;
-      reslut="${docID}";
-    }
-    else{
+      docID = _query.docs.first.id;
+      reslut = "${docID}";
+    } else {
       reslut = "0:0";
     }
 
@@ -495,88 +505,444 @@ class Firebauth {
     }
   }
 
-
   //kiểm tra tự đặt hàng , có cùng người dùng hay không ?
 
-  Future<int> CheckOrder(String email, String id) async{
-    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('products').where('email', isEqualTo:email, ).where('id', isEqualTo:id, ).get();
-    if(_query.docs.isNotEmpty){
+  Future<int> CheckOrder(String email, String id) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('products')
+            .where('email', isEqualTo: email)
+            .where('id', isEqualTo: id)
+            .get();
+    if (_query.docs.isNotEmpty) {
       return 0;
     }
     return 1;
   }
 
   //lấy tất cả thông tin user bằng email
-  
-  Future<String> GetAllUser(String email) async{
-    String? _docID ="0";
+
+  Future<String> GetAllUser(String email) async {
+    String? _docID = "0";
     String? _result;
     String? _imageUrl;
     String? _name;
     Timestamp _timeStamp;
-    
-    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('users').where('email',isEqualTo:email).get();
-    if(_query.docs.isNotEmpty){
-        _docID = _query.docs.first.id;
-        _imageUrl=_query.docs.first.get('image');
-       _name = _query.docs.first.get('name');
-       _timeStamp = _query.docs.first.get('createdAt');
 
-       _result = "${_docID}+${_imageUrl}+${_name}+${_timeStamp}";
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      _docID = _query.docs.first.id;
+      _imageUrl = _query.docs.first.get('image');
+      _name = _query.docs.first.get('name');
+      _timeStamp = _query.docs.first.get('createdAt');
 
-       return _result.toString();
+      _result = "${_docID}+${_imageUrl}+${_name}+${_timeStamp}";
+
+      return _result.toString();
     }
     return "0";
   }
 
-
-  //thêm địa chỉ giao hàng 
-  Future<void> SaveAddress(String email, String name,String  address, String telephone) async{
+  //thêm địa chỉ giao hàng
+  Future<void> SaveAddress(
+    String email,
+    String name,
+    String address,
+    String telephone,
+  ) async {
     String? _id = generateVerificationCode(10);
-     await FirebaseFirestore.instance.collection('address').add(
-      {
-        "id":_id,
-        "email":email,
-        "address":address,
-        "name" :name,
-        "telephone":telephone
-      }
-    );
+
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('address')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      await FirebaseFirestore.instance.collection('address').add({
+        "id": _id,
+        "email": email,
+        "address": address,
+        "name": name,
+        "telephone": telephone,
+        "select": false,
+      });
+    } else {
+      await FirebaseFirestore.instance.collection('address').add({
+        "id": _id,
+        "email": email,
+        "address": address,
+        "name": name,
+        "telephone": telephone,
+        "select": true,
+      });
+    }
   }
 
-  //lấy địa chiwr từ firebase 
+  //lấy địa chiwr từ firebase
 
-  Future<List<Map<String, dynamic>>> GetAddress(String email, ) async{
-    List<Map<String, dynamic>>items =[];
-    final QuerySnapshot _query = await FirebaseFirestore.instance.collection('address').where('email',isEqualTo: email).get();
-    if(_query.docs.isNotEmpty){
-      for(var doc in _query.docs){
-        items.addAll(
-          [
-            {
-               "id":doc['id'],
-               "email" :doc['email'],
-                "address":doc['address'],
-                "name":doc['name'],
-                "telephone":doc['telephone']
-            }
-          ]
-        );
+  Future<List<Map<String, dynamic>>> GetAddress(String email) async {
+    List<Map<String, dynamic>> items = [];
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('address')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "id": doc['id'],
+            "email": doc['email'],
+            "address": doc['address'],
+            "name": doc['name'],
+            "telephone": doc['telephone'],
+          },
+        ]);
       }
     }
-   return items;
-
+    return items;
   }
 
-      //xóa địa chỉ
-      Future<void> DeleteAddress(String id) async{
-        final QuerySnapshot _query = await FirebaseFirestore.instance.collection('address').where('id', isEqualTo: id).get();
-        if(_query.docs.isNotEmpty){
-           for( var item in _query.docs){
-              await item.reference.delete();
-           }
+  //lay địa chỉ
+  Future<List<Map<String, dynamic>>> GetAddress2(String email) async {
+    List<Map<String, dynamic>> items = [];
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('address')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "id": doc['id'],
+            "email": doc['email'],
+            "address": doc['address'],
+            "name": doc['name'],
+            "telephone": doc['telephone'],
+            "select": doc['select'],
+          },
+        ]);
+      }
+    }
+    return items;
+  }
+
+  //xóa địa chỉ
+  Future<void> DeleteAddress(String id) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('address')
+            .where('id', isEqualTo: id)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var item in _query.docs) {
+        await item.reference.delete();
+      }
+    }
+  }
+
+  //lấy địa chỉ giao hàng có true
+  Future<List<Map<String, dynamic>>> GetAddressSelected(String email) async {
+    List<Map<String, dynamic>> items = [];
+    bool select = true;
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('address')
+            .where('email', isEqualTo: email)
+            .where('select', isEqualTo: select)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          {
+            "id": doc['id'],
+            "email": doc['email'],
+            "address": doc['address'],
+            "name": doc['name'],
+            "telephone": doc['telephone'],
+            "select": doc['select'],
+          },
+        ]);
+      }
+    }
+    return items;
+  }
+
+  //update select address
+  Future<void> UpdateSelectedAddress(String email, String idItem) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('address')
+            .where('email', isEqualTo: email)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var item in _query.docs) {
+        String _id = item['id'];
+        if (_id == idItem) {
+          await FirebaseFirestore.instance
+              .collection('address')
+              .doc(item.id)
+              .update({'select': true});
+        } else {
+          await FirebaseFirestore.instance
+              .collection('address')
+              .doc(item.id)
+              .update({'select': false});
         }
       }
+    }
+  }
 
+  //đơn hàng
 
+  Future<void> saveOrder(DonHang _donhang) async {
+    await FirebaseFirestore.instance.collection('Order').add({
+      "id": _donhang.id,
+      "idProduct": _donhang.idProducts,
+      "name": _donhang.name,
+      "nameShop": _donhang.nameShop,
+      "soLuong": _donhang.soLuong,
+      "imageUrl": _donhang.imageUrl,
+      "address": _donhang.address,
+      "emailSell": _donhang.emailSell,
+      "emailBuy": _donhang.emailBuy,
+      "createdAt": _donhang.createdAt,
+      "price": _donhang.price,
+      "status": _donhang.status,
+    });
+  }
+
+  //Lấy đơn hàng theo email sell
+  Future<List<Map<String, dynamic>>> GetOrderByEmailBuy(
+    String emailSell,
+  ) async {
+    List<Map<String, dynamic>> items = [];
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('Order')
+            .where('emailSell', isEqualTo: emailSell)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        String? userNameBuy;
+        String? createdAt = doc['createdAt'];
+        String email = doc['emailBuy'];
+        final QuerySnapshot _query2 = await FirebaseFirestore.instance.collection('users').where('email',isEqualTo:email).get();
+        if(_query2.docs.isNotEmpty){
+            userNameBuy =  _query2.docs.first.get('name');
+        }
+        String id = doc['id'];
+        items.addAll([{
+           "idOrder" :id,
+           "userNameBuy":userNameBuy,
+           "createdAt":createdAt 
+        }]);
+      }
+    }
+    return items;
+  }
+  Future<List<Map<String, dynamic>>> GetOrderByEmailBuy2(
+    String emailBuy,
+  ) async {
+    List<Map<String, dynamic>> items = [];
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('Order')
+            .where('emailBuy', isEqualTo: emailBuy)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        String? createdAt = doc['createdAt'];
+        String email = doc['emailBuy'];
+        String status = doc['status'];
+        String name = doc['name'];
+        String soLuong = doc['soLuong'];
+        String id = doc['id'];
+        items.addAll([{
+           "idOrder" :id,
+           "emailBuy":email,
+           "createdAt":createdAt,
+           "status":status,
+           "name":name,
+           "soLuong":soLuong
+
+        }]);
+      }
+    }
+    return items;
+  }
+
+  //Lấy đơn hàng theo email sell
+  Future<List<DonHang>> GetOrderByEmailSell(String emailBuy) async {
+    List<DonHang> items = [];
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('Order')
+            .where('emailBuy', isEqualTo: emailBuy)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          DonHang(
+            id: doc['id'],
+            idProducts: doc['id'],
+            name: doc['name'],
+            nameShop: doc['nameShop'],
+            soLuong: doc['soLuong'],
+            imageUrl: doc['imageUrl'],
+            address: doc['address'],
+            emailSell: doc['emailSell'],
+            emailBuy: doc['emailBuy'],
+            createdAt: doc['createdAt'],
+            price: doc['price'],
+            status: doc['status'],
+          ),
+        ]);
+      }
+    }
+    return items;
+  }
+
+  //update products
+  Future<String> upDateProduct(
+    String idPro,
+    String soLuongDat,
+    BuildContext context,
+  ) async {
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('products')
+            .where('id', isEqualTo: idPro)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var item in _query.docs) {
+        String _id = item['id'];
+        int slDat = int.tryParse(soLuongDat)!;
+        int total = int.tryParse(item['total'])!;
+
+        if (slDat <= total) {
+          if (_id == idPro) {
+            await FirebaseFirestore.instance
+                .collection('products')
+                .doc(item.id)
+                .update({'total': (total - slDat).toString()});
+            return "ok";
+          } else {
+            print('Sai id');
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Center(child: Text('Số lượng sản phẩm không đủ !')),
+            ),
+          );
+        }
+      }
+    }
+    return "no";
+  }
+
+  //Lấy đơn hàng theo email buy , status chờ xác nhận
+  Future<List<DonHang>> GetOrderByEmailBuyChoXacNhan(String emailBuy) async {
+    List<DonHang> items = [];
+    final statusR = "Chờ xác nhận";
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('Order')
+            .where('emailBuy', isEqualTo: emailBuy)
+            .where('status', isEqualTo: statusR)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          DonHang(
+            id: doc['id'],
+            idProducts: doc['id'],
+            name: doc['name'],
+            nameShop: doc['nameShop'],
+            soLuong: doc['soLuong'],
+            imageUrl: doc['imageUrl'],
+            address: doc['address'],
+            emailSell: doc['emailSell'],
+            emailBuy: doc['emailBuy'],
+            createdAt: doc['createdAt'],
+            price: doc['price'],
+            status: doc['status'],
+          ),
+        ]);
+      }
+    }
+    return items;
+  }
+
+  //Lấy đơn hàng theo email buy , status Chờ giao
+  Future<List<DonHang>> GetOrderByEmailBuyChoGiao(String emailBuy) async {
+    List<DonHang> items = [];
+    final statusR = "Chờ giao";
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('Order')
+            .where('emailBuy', isEqualTo: emailBuy)
+            .where('status', isEqualTo: statusR)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          DonHang(
+            id: doc['id'],
+            idProducts: doc['id'],
+            name: doc['name'],
+            nameShop: doc['nameShop'],
+            soLuong: doc['soLuong'],
+            imageUrl: doc['imageUrl'],
+            address: doc['address'],
+            emailSell: doc['emailSell'],
+            emailBuy: doc['emailBuy'],
+            createdAt: doc['createdAt'],
+            price: doc['price'],
+            status: doc['status'],
+          ),
+        ]);
+      }
+    }
+    return items;
+  }
+
+  //Lấy đơn hàng theo email buy , status đã giao
+  Future<List<DonHang>> GetOrderByEmailBuyDaGiao(String emailBuy) async {
+    List<DonHang> items = [];
+    final statusR = "Đã giao";
+    final QuerySnapshot _query =
+        await FirebaseFirestore.instance
+            .collection('Order')
+            .where('emailBuy', isEqualTo: emailBuy)
+            .where('status', isEqualTo: statusR)
+            .get();
+    if (_query.docs.isNotEmpty) {
+      for (var doc in _query.docs) {
+        items.addAll([
+          DonHang(
+            id: doc['id'],
+            idProducts: doc['id'],
+            name: doc['name'],
+            nameShop: doc['nameShop'],
+            soLuong: doc['soLuong'],
+            imageUrl: doc['imageUrl'],
+            address: doc['address'],
+            emailSell: doc['emailSell'],
+            emailBuy: doc['emailBuy'],
+            createdAt: doc['createdAt'],
+            price: doc['price'],
+            status: doc['status'],
+          ),
+        ]);
+      }
+    }
+    return items;
+  }
 }

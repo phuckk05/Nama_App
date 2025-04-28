@@ -5,7 +5,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/DataBase/Sqlite.dart';
+import 'package:nama_app/Screens/ScreeenBuy.dart';
 import 'package:nama_app/Screens/ScreenCart.dart';
+import 'package:nama_app/Screens/ScreenPayment.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 import 'package:nama_app/Widgets/Seach.dart';
 
@@ -59,7 +61,10 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
   }
 
   void LuuSanPham() async {
-    int _checkOr = await _firebauth.CheckOrder(widget.email.toString(), items[0]['id']);
+    int _checkOr = await _firebauth.CheckOrder(
+      widget.email.toString(),
+      items[0]['id'],
+    );
     if (_checkOr == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -87,7 +92,10 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
   }
 
   void CheckMuaSanPham(List<Map<String, dynamic>> items) async {
-    int _checkOr = await _firebauth.CheckOrder(widget.email.toString(), items[0]['id']);
+    int _checkOr = await _firebauth.CheckOrder(
+      widget.email.toString(),
+      items[0]['id'],
+    );
     if (_checkOr == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -262,16 +270,21 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                       fontWeight: FontWeight.w900,
                     ),
                   ),
-                  items.isNotEmpty
-                      ? Text(
+                  if (items.isNotEmpty)
+                    Expanded(
+                      child: Text(
                         '${items[0]['price'].toString()} đ',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: AppStyle.textSizeLarge,
                           fontWeight: FontWeight.bold,
                           color: Colors.red,
                         ),
-                      )
-                      : Text('0'),
+                      ),
+                    )
+                  else
+                    Text('0'),
                 ],
               ),
             ),
@@ -781,10 +794,7 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                                     items[0]['imageUrl'],
                                     fit: BoxFit.fill,
                                   )
-                                  : Image.asset(
-                                    'lib/Image/nen.png',
-                                    fit: BoxFit.cover,
-                                  ),
+                                  : CircularProgressIndicator(),
                         ),
                       ),
                     ),
@@ -1086,7 +1096,20 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => GiaoDienMuaSanPham(
+                                email: widget.email.toString(),
+                                idProducts: items[0]['id'],
+                                soLuong: _soLuong,
+                              ),
+                        ),
+                      );
+                    },
                     child: Text(
                       'Mua ngay',
                       style: TextStyle(

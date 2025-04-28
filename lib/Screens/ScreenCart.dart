@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
@@ -107,7 +108,7 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.white,
         centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 15),
@@ -115,16 +116,16 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: Icon(Icons.arrow_back_ios, color: Colors.black),
           ),
         ),
         title: Text(
           'Giỏ hàng',
-          style: TextStyle(
-            fontSize: AppStyle.textSizeTitle,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: GoogleFonts.robotoSlab(
+                    fontSize: AppStyle.textSizeTitle,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
+                  ),
         ),
       ),
       backgroundColor: const Color.fromARGB(213, 255, 255, 255),

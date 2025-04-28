@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
 class GiaoDienThanhToan extends StatefulWidget {
@@ -85,11 +86,11 @@ class _GiaoDienThanhToanState extends State<GiaoDienThanhToan> {
             SizedBox(width: 8),
             Text(
               'Phương thức thanh toán',
-              style: TextStyle(
-                fontSize: AppStyle.textSizeTitle,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+              style: GoogleFonts.robotoSlab(
+                    fontSize: AppStyle.textSizeTitle,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
+                  ),
             ),
           ],
         ),
