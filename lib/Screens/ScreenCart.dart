@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
+import 'package:nama_app/Screens/ScreeenBuy.dart';
+import 'package:nama_app/Screens/ScreenAccount.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
 class GiaoDienGioHang extends StatefulWidget {
@@ -20,27 +22,31 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
   String textSua = "Sửa";
   int setFlex = 1;
   int flexConter = 3;
-
+  //list danh sách sản phẩm được add vào giỏ hàng
   List<Map<String, dynamic>> items = [];
-  List<Map<String, bool>> itemsCheck = [];
-  int soLuong = 0;
-  void truSoluong() {
-    setState(() {
-      if (soLuong > 0) {
-        soLuong -= 1;
-      }
-    });
+  //list danh sách sản phẩm được add vào giỏ hàng
+  List<Map<String, dynamic>> itemsbuy = [];
+  List<Map<String, dynamic>> itemsCheck = [];
+  List<Map<String, dynamic>> itemsSl = [];
+  void truSoluong(int index) {
+    int? a = int.tryParse(itemsSl[index]['sl$index'].toString());
+    if (a != null && a > 1) {
+      a = a - 1;
+      itemsSl[index] = {"sl$index": a.toString()};
+      setState(() {});
+    }
   }
 
-  void CongSoluong() {
-    setState(() {
-      if (soLuong >= 0) {
-        soLuong += 1;
-      }
-    });
+  void congSoluong(int index) {
+    int? a = int.tryParse(itemsSl[index]['sl$index'].toString());
+    if (a != null) {
+      a = a + 1;
+      itemsSl[index] = {"sl$index": a.toString()};
+      setState(() {});
+    }
   }
 
-  void CheckBox(bool value, List<Map<String, bool>> list) {
+  void CheckBox(bool value, List<Map<String, dynamic>> list) {
     list.clear();
     for (int i = 0; i < items.length; i++) {
       list.add({"check$i": value});
@@ -51,7 +57,7 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
   }
 
   //hàm check box
-  void CheckBoxAny(bool value, int index, List<Map<String, bool>> list) {
+  void CheckBoxAny(bool value, int index, List<Map<String, dynamic>> list) {
     // Nếu danh sách rỗng, khởi tạo với false
     if (list.length != items.length) {
       list.clear();
@@ -66,6 +72,61 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
     setState(() {});
   }
 
+  //lấy giỏ hàng mua ngay
+  void BuyNow() async {
+    itemsbuy.clear();
+
+    for (int i = 0; i < itemsCheck.length; i++) {
+      if (itemsCheck[i]['check$i'] == true) {
+        itemsbuy.add(items[i]);
+        itemsbuy.last['total'] = itemsSl[i]["sl$i"];
+        print('so luong :  ${itemsbuy.last['total']}');
+      }
+    }
+
+    // Chỉ gọi 1 lần sau khi xử lý xong
+    if (mounted) {
+      setState(() {});
+    }
+
+    if (itemsbuy.isNotEmpty) {
+      String checkTotal = await _firebauth.checkTotal(itemsbuy);
+      if (checkTotal == "ok") {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) =>
+                    GiaoDienMuaSanPham(email: widget.email, listCart: itemsbuy),
+          ),
+        );
+        if (result == true) {
+          // Duyệt ngược để tránh lỗi khi xóa phần tử trong danh sách
+          for (int i = items.length - 1; i >= 0; i--) {
+            for (var item in itemsbuy) {
+              if (item['idCart'] == items[i]['idcart']) {
+                items.removeAt(i);
+                itemsSl.removeAt(i);
+                break; // thoát vòng lặp itemsbuy sau khi xóa để tránh lỗi
+              }
+            }
+          }
+
+          if (mounted) setState(() {});
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Center(child: Text('Số lượng sản phẩm có hạn !'))),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Vui lòng chọn sản phẩm !')));
+    }
+  }
+
+  //xóa giỏ hàng
   void Sua() {
     setState(() {
       if (textSua == "Sửa") {
@@ -85,22 +146,31 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
     laySanPham();
   }
 
+  //lấy sản phẩm và số lượng đơn hàng
   void laySanPham() async {
     await _firebauth.getSaveCarts(items, widget.email.toString());
     setState(() {});
+    for (int i = 0; i < items.length; i++) {
+      itemsSl.addAll([
+        {"sl$i": items[i]['total']},
+      ]);
+    }
+    setState(() {});
   }
 
-  void XoaSanPham(int i) {
-    String id = items[i]['id'];
-    _firebauth.DeleteCarts(id);
-    laySanPham();
-  }
+  //xáo sản phẩm
+  void XoaSanPham(int i) async {
+    if (i < 0 || i >= items.length || i >= itemsSl.length) return;
 
-  void ShowSoLuong(String? a) {
-    int total = int.parse(a!);
-    setState(() {
-      soLuong = total;
-    });
+    String id = items[i]['idCart'].toString();
+
+    items.removeAt(i);
+    itemsSl.removeAt(i);
+    // itemsCheck.removeAt(i); // nếu có danh sách check
+
+    await _firebauth.DeleteCarts(id);
+
+    setState(() {});
   }
 
   @override
@@ -122,10 +192,10 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
         title: Text(
           'Giỏ hàng',
           style: GoogleFonts.robotoSlab(
-                    fontSize: AppStyle.textSizeTitle,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w900,
-                  ),
+            fontSize: AppStyle.textSizeTitle,
+            color: Colors.black,
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
       backgroundColor: const Color.fromARGB(213, 255, 255, 255),
@@ -179,7 +249,7 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
                   shrinkWrap: true,
                   physics:
                       NeverScrollableScrollPhysics(), // để không chiếm scroll của màn hình cha
-                  itemCount: items.isNotEmpty? items.length : 0,
+                  itemCount: items.isNotEmpty ? items.length : 0,
                   itemBuilder: (context, i) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
@@ -223,79 +293,119 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                     items.isNotEmpty?  items[i]['name'] : 'Đang tải lên...',
-                                      style: TextStyle(
-                                        fontSize: AppStyle.textSizeMedium,
+                                    SizedBox(
+                                      width: 200,
+                                      child: Text(
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        items.isNotEmpty
+                                            ? items[i]['name']
+                                            : 'Đang tải lên...',
+                                        style: TextStyle(
+                                          fontSize: AppStyle.textSizeMedium,
+                                        ),
                                       ),
                                     ),
-                                    Text(
-                                      items.isNotEmpty?  items[i]['price'] : 'Đang tải lên...',
-                                      style: TextStyle(
-                                        fontSize: AppStyle.textSizeLarge,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.redAccent,
+                                    SizedBox(
+                                      width: 200,
+                                      child: Text(
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        items.isNotEmpty
+                                            ? '${items[i]['price']} đ'
+                                            : 'Đang tải lên...',
+                                        style: TextStyle(
+                                          fontSize: AppStyle.textSizeLarge,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.redAccent,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 5),
-                                    Container(
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.black),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              truSoluong();
-                                            },
-                                            child: Container(
-                                              width: 30,
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                '-',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            width: 40,
-                                            alignment: Alignment.center,
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        InkWell(
+                                          onTap: () {
+                                            truSoluong(i);
+                                          },
+                                          child: Container(
+                                            padding: EdgeInsets.all(5),
                                             decoration: BoxDecoration(
-                                              border: Border.symmetric(
-                                                vertical: BorderSide(
-                                                  color: Colors.black,
+                                              border: Border(
+                                                left: BorderSide(
+                                                  color: Colors.black54,
+                                                  width: 2,
+                                                ),
+                                                top: BorderSide(
+                                                  color: Colors.black54,
+                                                  width: 2,
+                                                ),
+                                                bottom: BorderSide(
+                                                  color: Colors.black54,
+                                                  width: 2,
                                                 ),
                                               ),
+                                              borderRadius: BorderRadius.only(
+                                                bottomLeft: Radius.circular(10),
+                                                topLeft: Radius.circular(10),
+                                              ),
                                             ),
+                                            child: Icon(Icons.remove, size: 20),
+                                          ),
+                                        ),
+                                        Container(
+                                          constraints: BoxConstraints(
+                                            minWidth: 50,
+                                          ),
+                                          padding: EdgeInsets.all(5),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.black54,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Center(
                                             child: Text(
-                                              items.isNotEmpty?  items[i]['total'] : '0',
-                                              style: TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                          GestureDetector(
-                                            onTap: () {
-                                              CongSoluong();
-                                            },
-                                            child: Container(
-                                              width: 30,
-                                              alignment: Alignment.center,
-                                              child: Text(
-                                                '+',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                              itemsSl[i]['sl$i'].toString(),
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        InkWell(
+                                          onTap: () {
+                                            congSoluong(i);
+                                          },
+                                          child: Container(
+                                            padding: EdgeInsets.all(5),
+                                            decoration: BoxDecoration(
+                                              border: Border(
+                                                right: BorderSide(
+                                                  color: Colors.black54,
+                                                  width: 2,
+                                                ),
+                                                top: BorderSide(
+                                                  color: Colors.black54,
+                                                  width: 2,
+                                                ),
+                                                bottom: BorderSide(
+                                                  color: Colors.black54,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              borderRadius: BorderRadius.only(
+                                                bottomRight: Radius.circular(
+                                                  10,
+                                                ),
+                                                topRight: Radius.circular(10),
+                                              ),
+                                            ),
+                                            child: Icon(Icons.add, size: 20),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -358,44 +468,19 @@ class _GiaoDienGioHangState extends State<GiaoDienGioHang> {
             child: Row(
               children: [
                 Expanded(
-                  flex: 6,
-                  child: Container(
-                    color: Colors.white,
-                    child: Center(
-                      child: RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "Tổng thanh toán: ",
-                              style: TextStyle(
-                                fontSize: AppStyle.textSizeSmall,
-                                color: Colors.black,
-                              ),
-                            ),
-                            TextSpan(
-                              text: "600000đ",
-                              style: TextStyle(
-                                fontSize: AppStyle.textSizeLarge,
-                                color: Colors.redAccent,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    color: Colors.green,
-                    child: Center(
-                      child: Text(
-                        'Mua Ngay',
-                        style: TextStyle(
-                          fontSize: AppStyle.textSizeMedium,
-                          color: Colors.white,
+                  child: InkWell(
+                    onTap: () {
+                      BuyNow();
+                    },
+                    child: Container(
+                      color: Colors.green,
+                      child: Center(
+                        child: Text(
+                          'Mua Ngay',
+                          style: TextStyle(
+                            fontSize: AppStyle.textSizeMedium,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),

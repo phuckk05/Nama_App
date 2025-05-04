@@ -1,18 +1,19 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
-import 'package:nama_app/DataBase/Sqlite.dart';
+import 'package:nama_app/Models/Carts.dart';
+import 'package:nama_app/Models/Products.dart';
+import 'package:nama_app/Models/Review.dart';
 import 'package:nama_app/Screens/ScreeenBuy.dart';
 import 'package:nama_app/Screens/ScreenCart.dart';
-import 'package:nama_app/Screens/ScreenPayment.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 import 'package:nama_app/Widgets/Seach.dart';
 
 class GiaoDienSanPham extends StatefulWidget {
-  const GiaoDienSanPham({Key? key, this.id, this.email}) : super(key: key);
+  final List<Product>? itemProducts;
+  GiaoDienSanPham({super.key, this.id, this.email, this.itemProducts});
   final String? id;
   final String? email;
 
@@ -27,10 +28,14 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
   final _textTimKiem = TextEditingController();
   double _tienDo = 0.1;
   Timer? timer;
+  bool offstateReview = false;
   String? name;
   String? total;
   String? decription;
   int _soLuong = 1;
+  double tyleTot = 0;
+  double tyleTB = 0;
+  double tylet = 0;
   Color _colorIconTru = Colors.black45;
   List<Color> listColor = [
     Colors.lightGreenAccent,
@@ -39,6 +44,25 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
     Colors.blueGrey,
   ];
   final List<Map<String, dynamic>> items = [];
+  List<Map<String, Color>> listColorStar = [];
+  List<Review> listReview = [];
+  int selectedStar = 0;
+  int tongTart = 0;
+  int diem = 0;
+  String? imageUrl;
+
+  //set Color star
+  void SetColor(int i, int starCount) {
+    Map<String, Color> starColors = {};
+
+    for (int j = 1; j <= 5; j++) {
+      starColors["colorGrey$j"] =
+          j <= starCount ? Colors.amberAccent : Colors.grey;
+    }
+
+    listColorStar[i] = starColors;
+    setState(() {});
+  }
 
   void LaySanPham() async {
     String nameUser = await _firebauth.showProducts(
@@ -47,9 +71,11 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
     );
 
     setState(() {
-      List<String> list = nameUser.split(':');
+      print('name $nameUser');
+      List<String> list = nameUser.split('+');
+      imageUrl = list[1];
       name = list[0];
-      total = list[1];
+      total = list[2];
     });
   }
 
@@ -58,6 +84,43 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
     super.initState();
     LoadTienDo();
     LaySanPham();
+    layReview();
+  }
+
+  //lấy review
+  void layReview() async {
+    listReview = await _firebauth.getReview(widget.id.toString());
+    setState(() {});
+    for (int i = 0; i < listReview.length; i++) {
+      listColorStar.add({
+        "colorGrey1": Colors.grey,
+        "colorGrey2": Colors.grey,
+        "colorGrey3": Colors.grey,
+        "colorGrey4": Colors.grey,
+        "colorGrey5": Colors.grey,
+      });
+    }
+    setState(() {});
+    for (int i = 0; i < listReview.length; i++) {
+      diem += listReview[i].start;
+      tongTart++;
+      if (listReview[i].slelect == "Tốt") {
+        tyleTot++;
+      } else if (listReview[i].slelect == "Trung bình") {
+        tyleTB++;
+      } else {
+        tylet++;
+      }
+      SetColor(i, listReview[i].start);
+    }
+    double tong = tyleTot + tyleTB + tylet;
+    tyleTot = (tyleTot / tong) * 100;
+    tyleTot = double.parse(tyleTot.toStringAsFixed(1));
+    tyleTB = (tyleTB / tong) * 100;
+    tyleTB = double.parse(tyleTB.toStringAsFixed(1));
+    tylet = (tylet / tong) * 100;
+    tylet = double.parse(tylet.toStringAsFixed(1));
+    setState(() {});
   }
 
   void LuuSanPham() async {
@@ -75,14 +138,23 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
       );
     } else {
       String totalSL = "1";
-      _firebauth.saveCarts(
-        widget.email.toString(),
-        widget.id.toString(),
-        totalSL,
-        items[0]['imageUrl'],
-        items[0]['name'].toString(),
-        items[0]['price'],
+      String id = _firebauth.generateVerificationCode(7);
+      CartItem cartItem = CartItem(
+        idCart: id,
+        idProduct: widget.id.toString(),
+        name: items[0]['name'],
+        description: items[0]['description'],
+        address: items[0]['address'],
+        email: items[0]['email'],
+        imageUrl: items[0]['imageUrl'],
+        type: items[0]['type'],
+        price: items[0]['price'],
+        total: items[0]['total'].toString(),
+        createdAt: items[0]['createdAt'],
+        emailAdd: widget.email.toString(),
       );
+
+      _firebauth.saveCarts(cartItem);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Center(child: Text('Thêm vào giỏ hàng thành công !')),
@@ -368,253 +440,242 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
 
               minHeight: 10,
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 10, top: 5),
-              child: Row(
-                children: [
-                  Text(
-                    '4.7',
-                    style: TextStyle(fontSize: AppStyle.textSizeLarge),
-                  ),
-                  SizedBox(width: 5),
-                  Icon(Icons.star, size: 20, color: Colors.amberAccent),
-                  SizedBox(width: 5),
-                  Text(
-                    'Đánh giá sản phẩm',
-                    style: TextStyle(fontSize: AppStyle.textSizeMedium),
-                  ),
-                  SizedBox(width: 5),
-                  Text(
-                    '(32)',
-                    style: TextStyle(fontSize: AppStyle.textSizeMedium),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-
+            listReview.isNotEmpty
+                ? Column(
+                  children: [
+                    if (listReview.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10, top: 5),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [Text('Tất cả'), Icon(Icons.chevron_right)],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Kích thước',
-                    style: TextStyle(
-                      fontSize: AppStyle.textSizeMedium,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(height: 15),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(flex: 2, child: Text('Chật')),
-                      Expanded(
-                        flex: 6,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(),
-                          child: LinearProgressIndicator(
-                            borderRadius: BorderRadius.circular(10),
-
-                            value: _tienDo,
-                            backgroundColor: Colors.green,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.blue,
-                            ),
-                            minHeight: 5,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Text('100%'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(flex: 2, child: Text('Vừa vặn')),
-                      Expanded(
-                        flex: 6,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(),
-                          child: LinearProgressIndicator(
-                            borderRadius: BorderRadius.circular(10),
-
-                            value: _tienDo,
-                            backgroundColor: Colors.green,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.blue,
-                            ),
-                            minHeight: 5,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Text('100%'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(flex: 2, child: Text('Rộng')),
-                      Expanded(
-                        flex: 6,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(),
-                          child: LinearProgressIndicator(
-                            borderRadius: BorderRadius.circular(10),
-
-                            value: _tienDo,
-                            backgroundColor: Colors.green,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.blue,
-                            ),
-                            minHeight: 5,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Text('100%'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    child: Column(
-                      children: List.generate(2, (i) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Divider(),
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    child: ClipOval(
-                                      child: Image.asset(
-                                        'lib/Image/nen.png',
-                                        width: 30,
-                                        height: 30,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Text(
-                                    'Nguyen Dình Phuc',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                          children: [
+                            Text(
+                              '${diem / tongTart}',
+                              style: TextStyle(
+                                fontSize: AppStyle.textSizeLarge,
                               ),
-                              SizedBox(height: 5),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    size: 17,
-                                    color: const Color.fromARGB(
-                                      255,
-                                      242,
-                                      190,
-                                      4,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.star,
-                                    size: 17,
-                                    color: const Color.fromARGB(
-                                      255,
-                                      242,
-                                      190,
-                                      4,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.star,
-                                    size: 17,
-                                    color: const Color.fromARGB(
-                                      255,
-                                      242,
-                                      190,
-                                      4,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.star,
-                                    size: 17,
-                                    color: const Color.fromARGB(
-                                      255,
-                                      242,
-                                      190,
-                                      4,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.star,
-                                    size: 17,
-                                    color: const Color.fromARGB(
-                                      255,
-                                      242,
-                                      190,
-                                      4,
-                                    ),
-                                  ),
-                                ],
+                            ),
+                            SizedBox(width: 5),
+                            Icon(
+                              Icons.star,
+                              size: 20,
+                              color: Colors.amberAccent,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Đánh giá sản phẩm',
+                              style: TextStyle(
+                                fontSize: AppStyle.textSizeMedium,
                               ),
-                              SizedBox(height: 5),
-                              Text(
-                                'Đánh giá ',
-                                style: TextStyle(
-                                  fontSize: AppStyle.textSizeMedium,
-                                  color: Colors.blueGrey,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              '(${tongTart})',
+                              style: TextStyle(
+                                fontSize: AppStyle.textSizeMedium,
+                              ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text('Tất cả'),
+                                      Icon(Icons.chevron_right),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              SizedBox(height: 5),
-                              Text(
-                                'Đồ xấu vái chưởng ra, ước không mua đồ này sớm nhất có thể ',
+                            ),
+                          ],
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Độ hài lòng',
+                            style: TextStyle(
+                              fontSize: AppStyle.textSizeMedium,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 15),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(flex: 2, child: Text('Tốt')),
+                              Expanded(
+                                flex: 6,
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(),
+                                  child: LinearProgressIndicator(
+                                    borderRadius: BorderRadius.circular(10),
+
+                                    value: (tyleTot / 100),
+                                    backgroundColor: Colors.green,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue,
+                                    ),
+                                    minHeight: 5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text('${tyleTot}%'),
+                                ),
                               ),
                             ],
                           ),
-                        );
-                      }),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(flex: 2, child: Text('Trung bình')),
+                              Expanded(
+                                flex: 6,
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(),
+                                  child: LinearProgressIndicator(
+                                    borderRadius: BorderRadius.circular(10),
+
+                                    value: (tyleTB / 100),
+                                    backgroundColor: Colors.green,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue,
+                                    ),
+                                    minHeight: 5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text('${tyleTB}%'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(flex: 2, child: Text('Tệ')),
+                              Expanded(
+                                flex: 6,
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(),
+                                  child: LinearProgressIndicator(
+                                    borderRadius: BorderRadius.circular(10),
+
+                                    value: (tylet / 100),
+                                    backgroundColor: Colors.green,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue,
+                                    ),
+                                    minHeight: 5,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Text('${tylet}%'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            width: double.infinity,
+                            height: 300,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              physics: AlwaysScrollableScrollPhysics(),
+                              itemCount: listReview.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Divider(),
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            child: ClipOval(
+                                              child: Image.asset(
+                                                'lib/Image/nen.png',
+                                                width: 30,
+                                                height: 30,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            '${listReview[index].nameBuy}',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 5),
+                                      if (index < listColorStar.length)
+                                        Row(
+                                          children: List.generate(5, (indexx) {
+                                            return Icon(
+                                              Icons.star,
+                                              size: 17,
+                                              color:
+                                                  listColorStar[index]["colorGrey${indexx + 1}"] ??
+                                                  Colors.grey,
+                                            );
+                                          }),
+                                        ),
+
+                                      SizedBox(height: 5),
+                                      Text(
+                                        'Đánh giá ',
+                                        style: TextStyle(
+                                          fontSize: AppStyle.textSizeMedium,
+                                          color: Colors.blueGrey,
+                                        ),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Text('${listReview[index].review} '),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ],
+                )
+                : Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text('Chưa có đánh giá'),
                   ),
-                ],
-              ),
-            ),
+                ),
+
             SizedBox(height: 10),
             Container(
               height: 10,
@@ -637,8 +698,7 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                           width: 70,
                           height: 70,
                           child: ClipOval(
-                            child: Image.asset('lib/Image/nen.png'),
-                          ),
+                            child: imageUrl!=null?Image.network(imageUrl.toString() ,fit: BoxFit.fill, cacheWidth: 50, height: 50) : Image.asset('lib/Image/nen.png',)),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(left: 10),
@@ -675,7 +735,14 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Column(children: [Text('4,5'), Text('Đánh giá')]),
+                        Column(
+                          children: [
+                            listReview.isNotEmpty
+                                ? Text('${diem / tongTart}')
+                                : Text('0'),
+                            Text('Đánh giá'),
+                          ],
+                        ),
                         VerticalDivider(width: 2, color: Colors.black),
                         Column(
                           children: [Text(total.toString()), Text('Sản phẩm')],
@@ -754,7 +821,10 @@ class _GiaoDienSanPhamState extends State<GiaoDienSanPham> {
           ),
         ),
       ),
-      drawer: Search(email: widget.email.toString()),
+      drawer: Search(
+        email: widget.email.toString(),
+        itemProducts: widget.itemProducts,
+      ),
     );
   }
 

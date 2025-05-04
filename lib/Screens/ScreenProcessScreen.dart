@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
+import 'package:nama_app/Models/Products.dart';
 import 'package:nama_app/Screens/ScreenAccount.dart';
 import 'package:nama_app/Screens/ScreenHome.dart';
 import 'package:nama_app/Screens/ScreenNofi.dart';
@@ -18,16 +19,23 @@ class _ProcessSccreenState extends State<ProcessSccreen> {
   Firebauth firebaseAuth = Firebauth();
   int _slectedIndex = 0;
   List<Widget>? listScreen = [];
+
  
 
   //hiện thị dữ liệu trước cho giao diện thông báo 
   void layThongTinChoGiaoDienThongBao() async {
     List<Map<String, dynamic>>? itemsSell = [];
     List<Map<String, dynamic>>? itemsBuy = [];
-    itemsSell = await firebaseAuth.GetOrderByEmailBuy(widget.email.toString());
-    itemsBuy = await firebaseAuth.GetOrderByEmailBuy2(widget.email.toString());
-
+    List<Product>itemProducts =[];
+    itemsSell = await firebaseAuth.getOrderByEmailSell(widget.email.toString());
+    itemsBuy = await firebaseAuth.GetOrderByEmailBuy(widget.email.toString());
+    itemProducts = await firebaseAuth.getAllProduct();
     itemsBuy.sort((a, b) {
+      DateTime dateA = DateTime.parse(a['createdAt']);
+      DateTime dateB = DateTime.parse(b['createdAt']);
+      return dateB.compareTo(dateA);
+    });
+    itemsSell.sort((a, b) {
       DateTime dateA = DateTime.parse(a['createdAt']);
       DateTime dateB = DateTime.parse(b['createdAt']);
       return dateB.compareTo(dateA);
@@ -35,7 +43,7 @@ class _ProcessSccreenState extends State<ProcessSccreen> {
 
     setState(() {
       listScreen = [
-        GiaoDienHome(email: widget.email),
+        GiaoDienHome(email: widget.email, itemProducts: itemProducts),
         GiaoDienBan(email: widget.email),
         GiaoDienThongBao(email: widget.email, items: itemsSell, itemsBuy: itemsBuy),
         GiaoDienTaiKhoan(email: widget.email),

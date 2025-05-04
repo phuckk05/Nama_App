@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/Models/Order.dart';
+import 'package:nama_app/Screens/ScreenProcessScreen.dart';
 import 'package:nama_app/Screens/ScreenSelectAddress.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
@@ -8,11 +9,13 @@ class GiaoDienMuaSanPham extends StatefulWidget {
   final String? email;
   final String? idProducts;
   final int? soLuong;
-  const GiaoDienMuaSanPham({
+  final List<Map<String, dynamic>>? listCart;
+  GiaoDienMuaSanPham({
     super.key,
     this.email,
     this.idProducts,
     this.soLuong,
+    this.listCart,
   });
 
   @override
@@ -30,7 +33,10 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
   int deLay = 3;
   bool offStateLaoding = false;
   bool offStateOrder = true;
-
+  int tongTienHang = 0;
+  int tongThanhToan = 0;
+  bool isloading = false;
+  bool back = false;
   @override
   void initState() {
     super.initState();
@@ -46,29 +52,31 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
 
   //lây thông tin đơn hàng
   void LayThonTinDonHang() async {
-    nameUser = await _firebauth.showProducts(
-      widget.idProducts.toString(),
-      itemproducts,
-    );
-    name = nameUser!.split(':');
+    if (widget.listCart == null || widget.listCart!.isEmpty) {
+      nameUser = await _firebauth.showProducts(
+        widget.idProducts.toString(),
+        itemproducts,
+      );
+      name = nameUser!.split(':');
 
-    for (int i = 0; i < itemproducts.length; i++) {
-      tienThanhToan = int.tryParse(itemproducts[i]['price'].toString())!;
-    }
-    tienThanhToan = (tienThanhToan * widget.soLuong!) + 30000;
-    setState(() {});
+      for (int i = 0; i < itemproducts.length; i++) {
+        tienThanhToan = int.tryParse(itemproducts[i]['price'].toString())!;
+        tongTienHang =
+            int.tryParse(itemproducts[i]['price'].toString())! *
+            widget.soLuong!;
+      }
+      tienThanhToan = (tienThanhToan * widget.soLuong!) + 30000;
+
+      setState(() {});
+    } else {}
   }
 
   //set offstate
   void setOffState1() async {
-    // Future.delayed(Duration(seconds: 2), () {
-    //   if (mounted) {
-        setState(() {
-          offStateLaoding = true;
-          offStateOrder = false;
-        });
-    //   }
-    // });
+    setState(() {
+      offStateLaoding = true;
+      offStateOrder = false;
+    });
   }
 
   void setOffState2() {
@@ -91,7 +99,19 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
               padding: const EdgeInsets.only(left: 15, right: 5),
               child: IconButton(
                 onPressed: () {
-                  Navigator.pop(context, true);
+                  if (back) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                ProcessSccreen(email: widget.email.toString()),
+                      ),
+                      (route) => false,
+                    );
+                  } else {
+                    Navigator.pop(context, true);
+                  }
                 },
                 icon: Icon(Icons.arrow_back_ios, color: Colors.black),
               ),
@@ -124,383 +144,612 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
         ],
       ),
       backgroundColor: Colors.grey[300],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            InkWell(
-              onTap: () async {
-                final ketQua = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) =>
-                            GiaoDienChonDiaChi(email: widget.email.toString()),
-                  ),
-                );
-                if (ketQua != null) {
-                  LayDiaChi();
-                  items.clear();
-                  setState(() {});
-                }
-              },
-              child: Padding(
-                padding: EdgeInsets.all(10),
-                child: Container(
-                  padding: EdgeInsets.all(10),
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 8,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.location_on, color: Colors.green),
-                                SizedBox(width: 10),
-                                items.isNotEmpty
-                                    ? Text(
-                                      '${items[0]['name']}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    )
-                                    : Text(
-                                      'Đang tải lên...',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                SizedBox(width: 5),
-                                items.isNotEmpty
-                                    ? Text(
-                                      '${items[0]['telephone']}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.grey,
-                                      ),
-                                    )
-                                    : Text(
-                                      'Đang tải lên...',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                              ],
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: () async {
+                    final ketQua = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => GiaoDienChonDiaChi(
+                              email: widget.email.toString(),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                left: 35,
-                                right: 0,
-                              ),
-                              child:
-                                  items.isNotEmpty
-                                      ? Text(
-                                        '${items[0]['address']}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
+                      ),
+                    );
+                    if (ketQua != null) {
+                      LayDiaChi();
+                      // items.clear();
+                      setState(() {});
+                    }
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Container(
+                      padding: EdgeInsets.all(10),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 8,
+                            child:
+                                items.isNotEmpty
+                                    ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.location_on,
+                                              color: Colors.green,
+                                            ),
+                                            SizedBox(width: 10),
+                                            items.isNotEmpty
+                                                ? Text(
+                                                  '${items[0]['name']}',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                )
+                                                : Text(
+                                                  'Đang tải lên...',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                            SizedBox(width: 5),
+                                            items.isNotEmpty
+                                                ? Text(
+                                                  '${items[0]['telephone']}',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Colors.grey,
+                                                  ),
+                                                )
+                                                : Text(
+                                                  'Đang tải lên...',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                          ],
                                         ),
-                                      )
-                                      : Text(
-                                        'Đang tải lên...',
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 35,
+                                            right: 0,
+                                          ),
+                                          child:
+                                              items.isNotEmpty
+                                                  ? Text(
+                                                    '${items[0]['address']}',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  )
+                                                  : Text(
+                                                    'Đang tải lên...',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                        ),
+                                      ],
+                                    )
+                                    : Center(
+                                      child: Text(
+                                        'Chưa có địa chỉ !',
                                         style: TextStyle(
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: AppStyle.textSizeMedium,
+                                          color: Colors.black54,
                                         ),
                                       ),
+                                    ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: Icon(
+                                Icons.arrow_forward_ios,
+                                size: 20,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.house_siding_sharp),
+                            SizedBox(width: 10),
+                            Text(
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              'Danh sách đơn hàng',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 20,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
-              child: Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.house_siding_sharp),
-                        SizedBox(width: 10),
-                        name.isNotEmpty
-                            ? Text(
-                             maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              '${name[0].toString()}',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                            : Text(
-                              'Đang tải lên...',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                      ],
-                    ),
-                    ListView.builder(
-                      shrinkWrap:
-                          true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
-                      physics: NeverScrollableScrollPhysics(),
-                      itemCount: 1,
-                      itemBuilder: (context, index) {
-                        return Row(
-                          children: [
-                            Container(
-                              height: 120,
-                              width: 120,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 0,
-                                  top: 10,
-                                  right: 10,
-                                  bottom: 10,
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                    10,
-                                  ), // Bo tròn ảnh
-                                  child:
-                                      itemproducts.isNotEmpty
-                                          ? Image.network(
-                                            itemproducts[index]['imageUrl'],
-                                            fit: BoxFit.fill,
-                                          )
-                                          : Image.asset(
-                                            'lib/Image/nen.png',
-                                            fit: BoxFit.cover,
-                                          ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 100,
-
-                                // color: Colors.yellow,
-                                child: Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                        widget.listCart == null || widget.listCart!.isEmpty
+                            ? ListView.builder(
+                              shrinkWrap:
+                                  true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: 1,
+                              itemBuilder: (context, index) {
+                                return Row(
                                   children: [
-                                    itemproducts.isNotEmpty
-                                        ? Text(
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                          '${itemproducts[index]['description'].toString()}',
-                                          style: TextStyle(
-                                            color: Colors.black87,
-                                            fontFamily: AppStyle.fontFamily,
-                                          ),
-                                        )
-                                        : Text(
-                                          'Đang tải lên...',
-                                          style: TextStyle(
-                                            color: Colors.black87,
-                                            fontFamily: AppStyle.fontFamily,
-                                          ),
+                                    Container(
+                                      height: 120,
+                                      width: 120,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 0,
+                                          top: 10,
+                                          right: 10,
+                                          bottom: 10,
                                         ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        itemproducts.isNotEmpty
-                                            ? Text(
-                                               maxLines: 1,
-                                             overflow: TextOverflow.ellipsis,
-                                              '${itemproducts[index]['price'].toString()}',
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                                fontFamily: AppStyle.fontFamily,
-                                                fontSize:
-                                                    AppStyle.textSizeMedium,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                            : Text(
-                                              'Đang tải lên...',
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                                fontFamily: AppStyle.fontFamily,
-                                                fontSize:
-                                                    AppStyle.textSizeMedium,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ), // Bo tròn ảnh
+                                          child:
+                                              itemproducts.isNotEmpty
+                                                  ? Image.network(
+                                                    itemproducts[index]['imageUrl'],
+                                                    fit: BoxFit.fill,
+                                                  )
+                                                  : Image.asset(
+                                                    'lib/Image/nen.png',
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        height: 100,
+
+                                        // color: Colors.yellow,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            itemproducts.isNotEmpty
+                                                ? Text(
+                                                  maxLines: 3,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  '${itemproducts[index]['description'].toString()}',
+                                                  style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontFamily:
+                                                        AppStyle.fontFamily,
+                                                  ),
+                                                )
+                                                : Text(
+                                                  'Đang tải lên...',
+                                                  style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontFamily:
+                                                        AppStyle.fontFamily,
+                                                  ),
+                                                ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                itemproducts.isNotEmpty
+                                                    ? Text(
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      '${itemproducts[index]['price'].toString()}',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontFamily:
+                                                            AppStyle.fontFamily,
+                                                        fontSize:
+                                                            AppStyle
+                                                                .textSizeMedium,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    )
+                                                    : Text(
+                                                      'Đang tải lên...',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontFamily:
+                                                            AppStyle.fontFamily,
+                                                        fontSize:
+                                                            AppStyle
+                                                                .textSizeMedium,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                Text('x${widget.soLuong}'),
+                                              ],
                                             ),
-                                        Text('x${widget.soLuong}'),
-                                      ],
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ],
-                                ),
+                                );
+                              },
+                            )
+                            : ListView.builder(
+                              shrinkWrap:
+                                  true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: widget.listCart!.length,
+                              itemBuilder: (context, index) {
+                                return Row(
+                                  children: [
+                                    Container(
+                                      height: 120,
+                                      width: 120,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: 0,
+                                          top: 10,
+                                          right: 10,
+                                          bottom: 10,
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ), // Bo tròn ảnh
+                                          child:
+                                              widget.listCart!.isNotEmpty
+                                                  ? Image.network(
+                                                    widget
+                                                        .listCart![index]['imageUrl'],
+                                                    fit: BoxFit.fill,
+                                                  )
+                                                  : Image.asset(
+                                                    'lib/Image/nen.png',
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        height: 100,
+
+                                        // color: Colors.yellow,
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            widget.listCart!.isNotEmpty
+                                                ? Text(
+                                                  maxLines: 3,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  '${widget.listCart![index]['description'].toString()}',
+                                                  style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontFamily:
+                                                        AppStyle.fontFamily,
+                                                  ),
+                                                )
+                                                : Text(
+                                                  'Đang tải lên...',
+                                                  style: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontFamily:
+                                                        AppStyle.fontFamily,
+                                                  ),
+                                                ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                widget.listCart!.isNotEmpty
+                                                    ? Text(
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      '${widget.listCart![index]['price'].toString()}',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontFamily:
+                                                            AppStyle.fontFamily,
+                                                        fontSize:
+                                                            AppStyle
+                                                                .textSizeMedium,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    )
+                                                    : Text(
+                                                      'Đang tải lên...',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontFamily:
+                                                            AppStyle.fontFamily,
+                                                        fontSize:
+                                                            AppStyle
+                                                                .textSizeMedium,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                Text(
+                                                  'x${widget.listCart![index]['total']}',
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Padding(
+                  padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            'Phương thức thanh toán',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: AppStyle.textSizeMedium,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Thanh toán khi nhận hàng',
+                                style: TextStyle(color: Colors.black87),
+                              ),
+                              Icon(Icons.check, color: Colors.green),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 10, right: 10, bottom: 100),
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            'Chi tiết thanh toán',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: AppStyle.textSizeMedium,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+
+                          child:
+                              widget.listCart == null ||
+                                      widget.listCart!.isEmpty
+                                  ? Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: Text(
+                                              'Tổng tiền hàng',
+                                              style: TextStyle(
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            '${tienThanhToan} đ',
+                                            style: TextStyle(
+                                              color: Colors.red,
+                                              fontFamily: AppStyle.fontFamily,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  )
+                                  : Column(
+                                    children: [
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Tổng tiền hàng',
+                                          style: TextStyle(
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ),
+
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 5),
+                                        child: ListView.builder(
+                                          physics:
+                                              AlwaysScrollableScrollPhysics(),
+                                          shrinkWrap: true,
+                                          itemCount: widget.listCart!.length,
+                                          itemBuilder: (context, index) {
+                                            tongThanhToan +=
+                                                (int.tryParse(
+                                                      widget
+                                                          .listCart![index]['price']
+                                                          .toString(),
+                                                    )! +
+                                                    30000) *
+                                                int.tryParse(
+                                                  widget
+                                                      .listCart![index]['total']
+                                                      .toString(),
+                                                )!;
+                                            return Column(
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Sản phẩm ${index + 1}',
+                                                      style: TextStyle(
+                                                        color: Colors.black54,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      '${(int.tryParse(widget.listCart![index]['price'].toString())! + 30000) * int.tryParse(widget.listCart![index]['total'].toString())!} đ',
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontFamily:
+                                                            AppStyle.fontFamily,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Chi phí vận chuyển',
+                              style: TextStyle(color: Colors.black87),
+                            ),
+                            Text(
+                              '30000 đ/1 đơn hàng',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontFamily: AppStyle.fontFamily,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                        ),
 
-            Padding(
-              padding: EdgeInsets.only(left: 10, right: 10, bottom: 10),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        'Phương thức thanh toán',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: AppStyle.textSizeMedium,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Thanh toán khi nhận hàng',
-                            style: TextStyle(color: Colors.black87),
-                          ),
-                          Icon(Icons.check, color: Colors.green),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10, right: 10, bottom: 100),
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Text(
-                        'Chi tiết thanh toán',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: AppStyle.textSizeMedium,
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Tổng tiền hàng',
-                            style: TextStyle(color: Colors.black87),
-                          ),
-                          Text(
-                             maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            '345345 đ',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontFamily: AppStyle.fontFamily,
-                              fontWeight: FontWeight.bold,
+                        Divider(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Tổng thanh toán',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 15,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Chi phí vận chuyển',
-                          style: TextStyle(color: Colors.black87),
-                        ),
-                        Text(
-                          '30000 đ/kg',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontFamily: AppStyle.fontFamily,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    Divider(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Tổng thanh toán',
-                          style: TextStyle(color: Colors.black, fontSize: 15),
-                        ),
-                        Text(
-                           maxLines: 1,
+                            Text(
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                          '$tienThanhToan đ',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                              '${tongThanhToan + tienThanhToan} đ',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          if (isloading)
+            Container(
+              color: Colors.black.withOpacity(0.5),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
       bottomSheet: Visibility(
         visible: MediaQuery.of(context).viewInsets.bottom == 0,
@@ -516,23 +765,25 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
                   child: Container(
                     color: Colors.white,
                     child: Center(
-                      child: RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "Tổng cộng : ",
-                              style: TextStyle(color: Colors.black87),
-                            ),
-                            TextSpan(
-                              text: "$tienThanhToan đ",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: AppStyle.textSizeMedium, 
-                                 overflow: TextOverflow.ellipsis,
-                                 
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: "Tổng cộng : ",
+                                style: TextStyle(color: Colors.black87),
                               ),
-                            ),
-                          ],
+                              TextSpan(
+                                text: "${tienThanhToan + tongThanhToan} đ",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: AppStyle.textSizeMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -542,13 +793,19 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
                   flex: 5,
                   child: InkWell(
                     onTap: () async {
-                      showDialog(
-                        barrierDismissible: false,
-                        context: context,
-                        builder: (context) {
-                          return _Warning(context);
-                        },
-                      );
+                      if (items.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Bạn chưa có địa chỉ !')),
+                        );
+                      } else {
+                        showDialog(
+                          barrierDismissible: false,
+                          context: context,
+                          builder: (context) {
+                            return _Warning(context);
+                          },
+                        );
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(5),
@@ -579,107 +836,184 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
   }
 
   Widget _Warning(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.question_mark, color: Colors.green, size: 60),
-            const SizedBox(height: 16),
-            Text(
-              'vui lòng xác nhận đặt hàng!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: AppStyle.fontFamily,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
+    return StatefulBuilder(
+      builder: (context, setStateFul) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[300],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Quay lại',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                if (isloading) Center(child: CircularProgressIndicator()),
+                if (!isloading)
+                  Icon(Icons.question_mark, color: Colors.green, size: 60),
+                const SizedBox(height: 16),
+                Text(
+                  'vui lòng xác nhận đặt hàng!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: AppStyle.fontFamily,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      String result = await _firebauth.upDateProduct(
-                        itemproducts[0]['id'],
-                        widget.soLuong.toString(),
-                        context,
-                      );
-                      if (result == "ok") {
-                        String id = await _firebauth.generateVerificationCode(
-                          10,
-                        );
-                        final now = DateTime.now();
-                        DonHang _donhang = DonHang(
-                          id: id,
-                          idProducts: itemproducts[0]['id'],
-                          name: itemproducts[0]['name'],
-                          nameShop: name[0].toString(),
-                          soLuong: widget.soLuong.toString(),
-                          imageUrl: itemproducts[0]['imageUrl'],
-                          address: itemproducts[0]['id'],
-                          emailSell: itemproducts[0]['email'],
-                          emailBuy: widget.email.toString(),
-                          createdAt: now.toString(),
-                          price: tienThanhToan.toString(),
-                          status: "Chờ xác nhận",
-                        );
-                        await _firebauth.saveOrder(_donhang);
-                        Navigator.of(context).pop();
-                       setOffState1();
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (context) {
-                            return datHangThanhCong(context);
-                          },
-                        );
-                         
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Quay lại',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      'Xác nhận',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (widget.listCart == null ||
+                              widget.listCart!.isEmpty) {
+                            String result = await _firebauth.upDateProduct(
+                              itemproducts[0]['id'],
+                              widget.soLuong.toString(),
+                              context,
+                            );
+                            if (result == "ok") {
+                              setStateFul(() {
+                                isloading = true;
+                              });
+
+                              await Future.delayed(Duration(seconds: 2));
+                              String id = await _firebauth
+                                  .generateVerificationCode(10);
+                              final now = DateTime.now();
+                              DonHang _donhang = DonHang(
+                                id: id,
+                                idProducts: itemproducts[0]['id'],
+                                name: itemproducts[0]['name'],
+                                nameShop: name[0].toString(),
+                                soLuong: widget.soLuong.toString(),
+                                imageUrl: itemproducts[0]['imageUrl'],
+                                address: items[0]['id'],
+                                emailSell: itemproducts[0]['email'],
+                                emailBuy: widget.email.toString(),
+                                createdAt: now.toString(),
+                                price: itemproducts[0]['price'],
+                                priceAll: tienThanhToan.toString(),
+                                status: "Chờ xác nhận",
+                                hidenBuy: false,
+                                hidenSell: false,
+                              );
+                              await _firebauth.saveOrder(_donhang);
+
+                              setOffState1();
+
+                              setStateFul(() {
+                                isloading = false;
+                              });
+                              Navigator.of(context).pop();
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) {
+                                  return datHangThanhCong(context);
+                                },
+                              );
+                            } else {
+                              Navigator.of(context).pop();
+                            }
+                          } else {
+                            setStateFul(() {
+                              isloading = true;
+                            });
+
+                            for (int i = 0; i < widget.listCart!.length; i++) {
+                              int tongTien =
+                                  (int.tryParse(
+                                        widget.listCart![i]['price'].toString(),
+                                      )! +
+                                      30000) *
+                                  int.tryParse(
+                                    widget.listCart![i]['total'].toString(),
+                                  )!;
+                              String id = await _firebauth
+                                  .generateVerificationCode(10);
+                              await _firebauth.deleteCarts(widget.listCart!);
+                              await _firebauth.updateTotal(widget.listCart!);
+                              final now = DateTime.now();
+                              DonHang _donhang = DonHang(
+                                id: id,
+                                idProducts: widget.listCart![i]['idProduct'],
+                                name: widget.listCart![i]['name'],
+                                nameShop: "hello",
+                                soLuong:
+                                    widget.listCart![i]['total'].toString(),
+                                imageUrl: widget.listCart![i]['imageUrl'],
+                                address: items[0]['id'],
+                                emailSell: widget.listCart![i]['email'],
+                                emailBuy: widget.email.toString(),
+                                createdAt: now.toString(),
+                                price: widget.listCart![i]['price'],
+                                priceAll: tongTien.toString(),
+                                status: "Chờ xác nhận",
+                                hidenBuy: false,
+                                hidenSell: false,
+                              );
+                              await _firebauth.saveOrder(_donhang);
+                            }
+
+                            setOffState1();
+                            setStateFul(() {
+                              isloading = false;
+                            });
+                            setState(() {
+                              back = true;
+                            });
+                            Navigator.of(context).pop();
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) {
+                                return datHangThanhCong(context);
+                              },
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Xác nhận',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -719,7 +1053,16 @@ class _GiaoDienMuaSanPhamState extends State<GiaoDienMuaSanPham> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.popUntil(context, (route) => route.isFirst);
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => ProcessSccreen(
+                                      email: widget.email.toString(),
+                                    ),
+                              ),
+                              (route) => false,
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey[300],

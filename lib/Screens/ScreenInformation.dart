@@ -25,6 +25,7 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
   String? _result;
   List<String> _split = [];
   String? _url;
+  bool isloading = false;
 
   final _text = TextEditingController();
   //ham lấy ảnh
@@ -35,20 +36,36 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
 
-      setState((){
+      setState(() {
         _image = imageFile;
       });
-       _url = await _imageAPI.getURL(_image);
+      _url = await _imageAPI.getURL(_image);
+      setState(() {});
     } else {
       print('Không chọn ảnh nào.');
     }
   }
 
+  //update thông tin user
+  void updateUser(String image, String name) async {
+    setState(() {
+      isloading = true;
+    });
+    await _firebauth.UpdateInforUser(widget.email.toString(), image, name);
+    await Future.delayed(Duration(seconds: 2));
+    setState(() {
+      isloading = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Center(child: Text('Cập nhật thành công'))),
+    );
+  }
+
   //set color
   void SetColor(int index) {
-      _selectedIndex = index;
+    _selectedIndex = index;
     Future.delayed(Duration(milliseconds: 50), () {
-        _selectedIndex = null;
+      _selectedIndex = null;
       if (index == 1) {
         showModalBottomSheet(
           context: context,
@@ -68,20 +85,19 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
     _Lay_Thong_Tin_User();
     SetChieuCao();
   }
-  
-  //bắt sự kiện khi focus vào textflied 
-  void SetChieuCao(){
+
+  //bắt sự kiện khi focus vào textflied
+  void SetChieuCao() {
     _focusNode = FocusNode();
-    _focusNode.addListener((){
-      if(_focusNode.hasFocus){
-          setState(() {
-            chieuCao = 550;
-          });
-      }
-      else{
-            setState(() {
-            chieuCao = 250;
-          });
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus) {
+        setState(() {
+          chieuCao = 550;
+        });
+      } else {
+        setState(() {
+          chieuCao = 250;
+        });
       }
     });
   }
@@ -98,143 +114,168 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        actions: [
-          Expanded(
-            flex: 15,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 15, right: 5),
-              child: IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          actions: [
+            Expanded(
+              flex: 15,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 15, right: 5),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                  icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 70,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              child: Text(
-                'Sửa thông tin',
-                style: GoogleFonts.robotoSlab(
+            Expanded(
+              flex: 70,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 10),
+                child: Text(
+                  'Sửa thông tin',
+                  style: GoogleFonts.robotoSlab(
                     fontSize: AppStyle.textSizeTitle,
                     color: Colors.black,
                     fontWeight: FontWeight.w900,
                   ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 15,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: GestureDetector(
-                onTap: (){
-                  Navigator.pop(context);
-                },
-                child: Text(
-                'Lưu',
-                style: TextStyle(
-                  fontSize: AppStyle.textSizeMedium,
-                  color: Colors.green,
                 ),
               ),
-              )
             ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.green,
-
-              child: Center(
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(50),
-                        child: FutureBuilder(
-                          future: Future.delayed(Duration(seconds: 1)),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return CircularProgressIndicator(); 
-                            } else {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child:
-                                    _image == null
-                                        ? Image.network(
-                                          _split[1],
-                                          fit: BoxFit.cover,
-                                        )
-                                        : Image.file(
-                                          _image!,
-                                          fit: BoxFit.cover,
-                                        ),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 25,
-                      left: 25,
-
-                      child: GestureDetector(
-                        onTap: () {
-                          print('hello Ưolrd');
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.white,
+            Expanded(
+              flex: 15,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: GestureDetector(
+                  onTap: () async {
+                    if (_url != null && _text.text.isNotEmpty) {
+                      updateUser(_url.toString(), _text.text.toString());
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Center(
+                            child: Text('Vui lòng chọn thông tin'),
                           ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(
+                    'Lưu',
+                    style: TextStyle(
+                      fontSize: AppStyle.textSizeMedium,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.green,
 
-                          child: GestureDetector(
-                            onTap: () {
-                              pickImageFromGallery();
-                            },
-                            child: Text(
-                              'Sửa',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: AppStyle.textSizeMedium,
-                                fontWeight: FontWeight.w500,
+                    child: Center(
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(50),
+                              child: FutureBuilder(
+                                future: Future.delayed(Duration(seconds: 2)),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return CircularProgressIndicator();
+                                  } else {
+                                    return ClipRRect(
+                                      borderRadius: BorderRadius.circular(50),
+                                      child:
+                                          _image == null
+                                              ? Image.network(
+                                                _split[1],
+                                                fit: BoxFit.cover,
+                                              )
+                                              : Image.file(
+                                                _image!,
+                                                fit: BoxFit.cover,
+                                              ),
+                                    );
+                                  }
+                                },
                               ),
                             ),
                           ),
-                        ),
+                          Positioned(
+                            bottom: 0,
+                            right: 25,
+                            left: 25,
+
+                            child: GestureDetector(
+                              onTap: () {
+                                print('hello Ưolrd');
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white,
+                                ),
+
+                                child: GestureDetector(
+                                  onTap: () {
+                                    pickImageFromGallery();
+                                  },
+                                  child: Text(
+                                    'Sửa',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: AppStyle.textSizeMedium,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  flex: 7,
+                  child: Column(
+                    children: [buildTile(1, "Tên"), Divider(height: 1)],
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            flex: 7,
-            child: Column(children: [buildTile(1, "Tên"), Divider(height: 1)]),
-          ),
-        ],
+
+            if (isloading)
+              Container(
+                color: Colors.black54.withOpacity(0.5),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -289,24 +330,24 @@ class _GiaoDienThongTinState extends State<GiaoDienThongTin> {
             decoration: InputDecoration(labelText: 'Nhập Tên mới'),
           ),
           SizedBox(height: 40),
-          Center(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(100, 40),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 5,
-              ),
-              onPressed: () {
-                Navigator.pop(context); // đóng bottom sheet
-              },
-              child: Text(
-                "Lưu",
-                style: TextStyle(fontSize: AppStyle.textSizeMedium),
-              ),
-            ),
-          ),
+          // Center(
+          //   child: ElevatedButton(
+          //     style: ElevatedButton.styleFrom(
+          //       minimumSize: Size(100, 40),
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(10),
+          //       ),
+          //       elevation: 5,
+          //     ),
+          //     onPressed: () {
+          //       Navigator.pop(context); // đóng bottom sheet
+          //     },
+          //     child: Text(
+          //       "Lưu",
+          //       style: TextStyle(fontSize: AppStyle.textSizeMedium),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/Models/Order.dart';
+import 'package:nama_app/Screens/ScreenDetail.dart';
+import 'package:nama_app/Screens/ScreenEvaluate.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
 class GiaoDienDonHang extends StatefulWidget {
   final String? email;
   final List<DonHang>? listDonHang;
-  final List<DonHang>? listDonHangChoGiao;
-  final List<DonHang>? listDonHangDaGiao;
 
-  GiaoDienDonHang({super.key, this.email, this.listDonHang, this.listDonHangChoGiao, this.listDonHangDaGiao});
+  GiaoDienDonHang({super.key, this.email, this.listDonHang});
 
   @override
   State<GiaoDienDonHang> createState() => _GiaoDienDonHangState();
@@ -24,26 +24,102 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
   List<String> name = [];
   List<Map<String, dynamic>> items = [];
   List<Map<String, dynamic>> itemproducts = [];
- 
+  List<DonHang> listChoXacNhan = [];
+  List<DonHang> listChoGiao = [];
+  List<DonHang> listDanhGia = [];
+  List<DonHang> listDonHangDaGiao = [];
+
   late TabController _tabController;
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    doDaNhanDuocHang();
   }
 
   //lay thong tin thanh toan
- 
+  void nhanHangThanhCong(String id) async {
+    // Tìm đơn hàng có id tương ứng trong listDonHangDaGiao
+    DonHang donHang = listDonHangDaGiao.firstWhere(
+      (item) => item.id == id,
+      orElse: () => null as DonHang,
+    );
+
+    if (donHang != null) {
+      // Cập nhật trạng thái của đơn hàng
+      donHang.status = "Đã nhận hàng";
+
+      // Thêm đơn hàng vào danh sách đánh giá
+      listDanhGia.add(donHang);
+
+      // Xóa khỏi danh sách đã giao
+      listDonHangDaGiao.removeWhere((item) => item.id == id);
+
+      // Cập nhật Firestore
+      await _firebauth.updateDonHangdaDuocNhan(id);
+
+      // Đóng dialog, cập nhật giao diện và hiển thị thông báo
+      if (mounted) {
+        Navigator.of(context).pop();
+        setState(() {});
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Center(child: Text('Nhận hàng thành công'))),
+      );
+    } else {
+      // Nếu không tìm thấy đơn hàng theo id
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Center(child: Text('Không tìm thấy đơn hàng'))),
+      );
+    }
+  }
+
+  //lấy thông tin đơn đã nhận được hàng
+  void doDaNhanDuocHang() {
+    listChoXacNhan =
+        widget.listDonHang
+            ?.where((itemss) => itemss.status == "Chờ xác nhận")
+            .toList() ??
+        [];
+    listChoGiao =
+        widget.listDonHang
+            ?.where((itemss) => itemss.status == "Chờ giao")
+            .toList() ??
+        [];
+    listDanhGia =
+        widget.listDonHang
+            ?.where(
+              (itemss) =>
+                  itemss.status == "Đã nhận hàng" ||
+                  itemss.status == "Đã đánh giá",
+            )
+            .toList() ??
+        [];
+
+    listDonHangDaGiao =
+        widget.listDonHang
+            ?.where((itemss) => itemss.status == "Đã giao")
+            .toList() ??
+        [];
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   void dispose() {
     _tabController.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: 
+    Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
@@ -54,7 +130,7 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
               padding: const EdgeInsets.only(left: 15, right: 5),
               child: IconButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(context, true);
                 },
                 icon: Icon(Icons.arrow_back_ios, color: Colors.black),
               ),
@@ -67,10 +143,10 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
               child: Text(
                 'Đơn hàng của bạn',
                 style: GoogleFonts.robotoSlab(
-                    fontSize: AppStyle.textSizeTitle,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  fontSize: AppStyle.textSizeTitle,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ),
@@ -106,7 +182,7 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
               indicatorColor: Colors.black,
               labelStyle: TextStyle(
                 fontSize: AppStyle.textSizeMedium,
-                fontWeight: FontWeight.bold
+                fontWeight: FontWeight.bold,
               ),
               tabs: [
                 Tab(text: 'Xác nhận'),
@@ -122,13 +198,14 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
               children: [
                 giaoDienChoXacNhan(),
                 giaoDienChoGiao(),
-                giaoDienDaGiao(), 
-                Center(child: Text('Hello 4')),
+                giaoDienDaGiao(),
+                giaoDaNhanHang(),
               ],
             ),
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -136,23 +213,28 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
     return SingleChildScrollView(
       child: Column(
         children: [
-          widget.listDonHang!.isNotEmpty
+          listChoXacNhan.isNotEmpty
               ? Padding(
-                padding: EdgeInsets.only(left: 10, right: 10, bottom: 0, top: 10),
+                padding: EdgeInsets.only(
+                  left: 10,
+                  right: 10,
+                  bottom: 0,
+                  top: 10,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 0),
-      
+
                   child: Column(
                     children: [
                       ListView.builder(
                         shrinkWrap:
                             true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
                         physics: NeverScrollableScrollPhysics(),
-                        itemCount:  widget.listDonHang!.length,
+                        itemCount: listChoXacNhan.length,
                         itemBuilder: (context, index) {
                           return InkWell(
                             onTap: () {
-                              print( widget.listDonHang![index].id);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoXacNhan[index],i: 0,)));
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -173,9 +255,9 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                       children: [
                                         Icon(Icons.house_siding_sharp),
                                         SizedBox(width: 10),
-                                         widget.listDonHang!.isNotEmpty
+                                        widget.listDonHang!.isNotEmpty
                                             ? Text(
-                                              '${ widget.listDonHang![index].nameShop}',
+                                              '${listChoXacNhan[index].nameShop}',
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.bold,
@@ -208,13 +290,14 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                               bottom: 10,
                                             ),
                                             child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(
-                                                10,
-                                              ), // Bo tròn ảnh
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    10,
+                                                  ), // Bo tròn ảnh
                                               child:
-                                                   widget.listDonHang!.isNotEmpty
+                                                  listChoXacNhan.isNotEmpty
                                                       ? Image.network(
-                                                        '${ widget.listDonHang![index].imageUrl}',
+                                                        '${listChoXacNhan[index].imageUrl}',
                                                         fit: BoxFit.fill,
                                                       )
                                                       : Image.asset(
@@ -227,11 +310,12 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                         Expanded(
                                           child: Container(
                                             height: 100,
-      
+
                                             // color: Colors.yellow,
                                             child: Column(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
@@ -241,13 +325,14 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                       alignment:
                                                           Alignment.centerLeft,
                                                       child:
-                                                           widget.listDonHang!.isNotEmpty
+                                                          listChoXacNhan
+                                                                  .isNotEmpty
                                                               ? Text(
                                                                 maxLines: 3,
                                                                 overflow:
                                                                     TextOverflow
                                                                         .ellipsis,
-                                                                '${ widget.listDonHang![index].name}',
+                                                                '${listChoXacNhan[index].name}',
                                                                 style: TextStyle(
                                                                   color:
                                                                       Colors
@@ -273,7 +358,7 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                       alignment:
                                                           Alignment.centerRight,
                                                       child: Text(
-                                                        'x${ widget.listDonHang![index].soLuong}',
+                                                        'x${listChoXacNhan[index].soLuong}',
                                                       ),
                                                     ),
                                                   ],
@@ -282,9 +367,9 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.end,
                                                   children: [
-                                                    widget.listDonHang!.isNotEmpty
+                                                    listChoXacNhan.isNotEmpty
                                                         ? Text(
-                                                          '${ widget.listDonHang![index].price} đ',
+                                                          '${listChoXacNhan[index].price} đ',
                                                           style: TextStyle(
                                                             color: Colors.red,
                                                             fontFamily:
@@ -323,13 +408,14 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
                                         children: [
                                           Text(
-                                            'Tổng số tiền (${ widget.listDonHang![index].soLuong} sản phẩm):',
+                                            'Tổng số tiền (${listChoXacNhan[index].soLuong} sản phẩm):',
                                           ),
                                           Text(
-                                            ' ${ widget.listDonHang![index].price} đ',
+                                            ' ${listChoXacNhan[index].priceAll} đ',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: AppStyle.textSizeMedium,
@@ -346,7 +432,8 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             'Trạng thái đơn hàng',
@@ -358,17 +445,21 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                           Container(
                                             padding: EdgeInsets.all(10),
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(
-                                                10,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: Colors.black,
+                                                width: 1,
                                               ),
-                                              color: Colors.green,
+                                              color: Colors.white,
                                             ),
                                             child: Text(
-                                              '${ widget.listDonHang![index].status}',
+                                              '${listChoXacNhan[index].status}',
                                               style: TextStyle(
-                                                fontSize: AppStyle.textSizeMedium,
+                                                fontSize:
+                                                    AppStyle.textSizeMedium,
                                                 fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                                color: Colors.black,
                                               ),
                                             ),
                                           ),
@@ -395,291 +486,11 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                   ),
                 ),
               ),
-      
+
           Padding(
             padding: const EdgeInsets.only(top: 0, bottom: 100),
             child: Text(
-              ' - Có thể bạn cũng thích - ',
-              style: TextStyle(
-                fontSize: AppStyle.textSizeMedium,
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  //tab chờ giao
-   Widget giaoDienChoGiao() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-           widget.listDonHangChoGiao!.isNotEmpty
-              ? Padding(
-                padding: EdgeInsets.only(left: 10, right: 10, bottom: 0, top: 10),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 0),
-      
-                  child: Column(
-                    children: [
-                      ListView.builder(
-                        shrinkWrap:
-                            true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount:  widget.listDonHangChoGiao!.length,
-                        itemBuilder: (context, index) {
-                          return InkWell(
-                            onTap: () {
-                              print(widget.listDonHangChoGiao![index].id);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Container(
-                                padding: EdgeInsets.only(
-                                  left: 10,
-                                  right: 10,
-                                  top: 10,
-                                  bottom: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(Icons.house_siding_sharp),
-                                        SizedBox(width: 10),
-                                         widget.listDonHangChoGiao!.isNotEmpty
-                                            ? Text(
-                                              '${widget.listDonHangChoGiao![index].nameShop}',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                            : Text(
-                                              'Đang tải lên...',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          height: 120,
-                                          width: 120,
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                          ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 0,
-                                              top: 10,
-                                              right: 10,
-                                              bottom: 10,
-                                            ),
-                                            child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(
-                                                10,
-                                              ), // Bo tròn ảnh
-                                              child:
-                                                   widget.listDonHangChoGiao!.isNotEmpty
-                                                      ? Image.network(
-                                                        '${widget.listDonHangChoGiao![index].imageUrl}',
-                                                        fit: BoxFit.fill,
-                                                      )
-                                                      : Image.asset(
-                                                        'lib/Image/nen.png',
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Container(
-                                            height: 100,
-      
-                                            // color: Colors.yellow,
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Column(
-                                                  children: [
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      child:
-                                                           widget.listDonHangChoGiao!.isNotEmpty
-                                                              ? Text(
-                                                                maxLines: 3,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                '${widget.listDonHangChoGiao![index].name}',
-                                                                style: TextStyle(
-                                                                  color:
-                                                                      Colors
-                                                                          .black87,
-                                                                  fontFamily:
-                                                                      AppStyle
-                                                                          .fontFamily,
-                                                                ),
-                                                              )
-                                                              : Text(
-                                                                'Đang tải lên...',
-                                                                style: TextStyle(
-                                                                  color:
-                                                                      Colors
-                                                                          .black87,
-                                                                  fontFamily:
-                                                                      AppStyle
-                                                                          .fontFamily,
-                                                                ),
-                                                              ),
-                                                    ),
-                                                    Align(
-                                                      alignment:
-                                                          Alignment.centerRight,
-                                                      child: Text(
-                                                        'x${widget.listDonHangChoGiao![index].soLuong}',
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  children: [
-                                                     widget.listDonHangChoGiao!.isNotEmpty
-                                                        ? Text(
-                                                          '${widget.listDonHangChoGiao![index].price} đ',
-                                                          style: TextStyle(
-                                                            color: Colors.red,
-                                                            fontFamily:
-                                                                AppStyle
-                                                                    .fontFamily,
-                                                            fontSize:
-                                                                AppStyle
-                                                                    .textSizeMedium,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        )
-                                                        : Text(
-                                                          'Đang tải lên...',
-                                                          style: TextStyle(
-                                                            color: Colors.red,
-                                                            fontFamily:
-                                                                AppStyle
-                                                                    .fontFamily,
-                                                            fontSize:
-                                                                AppStyle
-                                                                    .textSizeMedium,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                    // Text('x${widget.soLuong}'),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          Text(
-                                            'Tổng số tiền (${widget.listDonHangChoGiao![index].soLuong} sản phẩm):',
-                                          ),
-                                          Text(
-                                            ' ${widget.listDonHangChoGiao![index].price} đ',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: AppStyle.textSizeMedium,
-                                              color: Colors.red,
-                                              fontFamily: AppStyle.fontFamily,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    SizedBox(height: 5),
-                                    Divider(),
-                                    SizedBox(height: 5),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'Trạng thái đơn hàng',
-                                            style: TextStyle(
-                                              fontSize: AppStyle.textSizeMedium,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(
-                                                10,
-                                              ),
-                                              color: Colors.green,
-                                            ),
-                                            child: Text(
-                                              '${widget.listDonHangChoGiao![index].status}',
-                                              style: TextStyle(
-                                                fontSize: AppStyle.textSizeMedium,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              )
-              : Container(
-                height: 200,
-                child: Center(
-                  child: Text(
-                    'Không có đơn hàng nào cả ! ',
-                    style: TextStyle(color: Colors.grey, fontSize: 25),
-                  ),
-                ),
-              ),
-      
-          Padding(
-            padding: const EdgeInsets.only(top: 0, bottom: 100),
-            child: Text(
-              ' - Có thể bạn cũng thích - ',
+              '',
               style: TextStyle(
                 fontSize: AppStyle.textSizeMedium,
                 fontWeight: FontWeight.bold,
@@ -692,29 +503,631 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
     );
   }
 
+  //tab chờ giao
+  Widget giaoDienChoGiao() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          listChoGiao.isNotEmpty
+              ? Padding(
+                padding: EdgeInsets.only(
+                  left: 10,
+                  right: 10,
+                  bottom: 0,
+                  top: 10,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 0),
+
+                  child: Column(
+                    children: [
+                      ListView.builder(
+                        shrinkWrap:
+                            true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: listChoGiao.length,
+                        itemBuilder: (context, index) {
+                          return InkWell(
+                             onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoGiao[index],i: 1,)));
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 10,
+                                  right: 10,
+                                  top: 10,
+                                  bottom: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.house_siding_sharp),
+                                        SizedBox(width: 10),
+                                        listChoGiao.isNotEmpty
+                                            ? Text(
+                                              '${listChoGiao[index].nameShop}',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            )
+                                            : Text(
+                                              'Đang tải lên...',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          height: 120,
+                                          width: 120,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 0,
+                                              top: 10,
+                                              right: 10,
+                                              bottom: 10,
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    10,
+                                                  ), // Bo tròn ảnh
+                                              child:
+                                                  listChoGiao.isNotEmpty
+                                                      ? Image.network(
+                                                        '${listChoGiao[index].imageUrl}',
+                                                        fit: BoxFit.fill,
+                                                      )
+                                                      : Image.asset(
+                                                        'lib/Image/nen.png',
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Container(
+                                            height: 100,
+
+                                            // color: Colors.yellow,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Column(
+                                                  children: [
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerLeft,
+                                                      child:
+                                                          listChoGiao.isNotEmpty
+                                                              ? Text(
+                                                                maxLines: 3,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                '${listChoGiao[index].name}',
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .black87,
+                                                                  fontFamily:
+                                                                      AppStyle
+                                                                          .fontFamily,
+                                                                ),
+                                                              )
+                                                              : Text(
+                                                                'Đang tải lên...',
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .black87,
+                                                                  fontFamily:
+                                                                      AppStyle
+                                                                          .fontFamily,
+                                                                ),
+                                                              ),
+                                                    ),
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: Text(
+                                                        'x${listChoGiao[index].soLuong}',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    listChoGiao.isNotEmpty
+                                                        ? Text(
+                                                          '${listChoGiao[index].price} đ',
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontFamily:
+                                                                AppStyle
+                                                                    .fontFamily,
+                                                            fontSize:
+                                                                AppStyle
+                                                                    .textSizeMedium,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        )
+                                                        : Text(
+                                                          'Đang tải lên...',
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontFamily:
+                                                                AppStyle
+                                                                    .fontFamily,
+                                                            fontSize:
+                                                                AppStyle
+                                                                    .textSizeMedium,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                    // Text('x${widget.soLuong}'),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            'Tổng số tiền (${listChoGiao[index].soLuong} sản phẩm):',
+                                          ),
+                                          Text(
+                                            ' ${listChoGiao[index].priceAll} đ',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: AppStyle.textSizeMedium,
+                                              color: Colors.red,
+                                              fontFamily: AppStyle.fontFamily,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    Divider(),
+                                    SizedBox(height: 5),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Trạng thái đơn hàng',
+                                            style: TextStyle(
+                                              fontSize: AppStyle.textSizeMedium,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                color: Colors.black,
+                                                width: 1,
+                                              ),
+                                              color: Colors.white,
+                                            ),
+                                            child: Text(
+                                              '${listChoGiao[index].status}',
+                                              style: TextStyle(
+                                                fontSize:
+                                                    AppStyle.textSizeMedium,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              : Container(
+                height: 200,
+                child: Center(
+                  child: Text(
+                    'Không có đơn hàng nào cả ! ',
+                    style: TextStyle(color: Colors.grey, fontSize: 25),
+                  ),
+                ),
+              ),
+
+          Padding(
+            padding: const EdgeInsets.only(top: 0, bottom: 100),
+            child: Text(
+              '',
+              style: TextStyle(
+                fontSize: AppStyle.textSizeMedium,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget giaoDienDaGiao() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          listDonHangDaGiao.isNotEmpty
+              ? Padding(
+                padding: EdgeInsets.only(
+                  left: 10,
+                  right: 10,
+                  bottom: 0,
+                  top: 10,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 0),
+
+                  child: Column(
+                    children: [
+                      ListView.builder(
+                        shrinkWrap:
+                            true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: listDonHangDaGiao.length,
+                        itemBuilder: (context, index) {
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listDonHangDaGiao[index], i: 2,)));
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 10,
+                                  right: 10,
+                                  top: 10,
+                                  bottom: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.house_siding_sharp),
+                                        SizedBox(width: 10),
+                                        listDonHangDaGiao.isNotEmpty
+                                            ? Text(
+                                              '${listDonHangDaGiao[index].nameShop}',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            )
+                                            : Text(
+                                              'Đang tải lên...',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                      ],
+                                    ),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          height: 120,
+                                          width: 120,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              left: 0,
+                                              top: 10,
+                                              right: 10,
+                                              bottom: 10,
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    10,
+                                                  ), // Bo tròn ảnh
+                                              child:
+                                                  listDonHangDaGiao.isNotEmpty
+                                                      ? Image.network(
+                                                        '${listDonHangDaGiao[index].imageUrl}',
+                                                        fit: BoxFit.fill,
+                                                      )
+                                                      : Image.asset(
+                                                        'lib/Image/nen.png',
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Container(
+                                            height: 100,
+
+                                            // color: Colors.yellow,
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Column(
+                                                  children: [
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerLeft,
+                                                      child:
+                                                          listDonHangDaGiao
+                                                                  .isNotEmpty
+                                                              ? Text(
+                                                                maxLines: 3,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                '${listDonHangDaGiao[index].name}',
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .black87,
+                                                                  fontFamily:
+                                                                      AppStyle
+                                                                          .fontFamily,
+                                                                ),
+                                                              )
+                                                              : Text(
+                                                                'Đang tải lên...',
+                                                                style: TextStyle(
+                                                                  color:
+                                                                      Colors
+                                                                          .black87,
+                                                                  fontFamily:
+                                                                      AppStyle
+                                                                          .fontFamily,
+                                                                ),
+                                                              ),
+                                                    ),
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: Text(
+                                                        'x${listDonHangDaGiao[index].soLuong}',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    listDonHangDaGiao.isNotEmpty
+                                                        ? Text(
+                                                          '${listDonHangDaGiao[index].price} đ',
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontFamily:
+                                                                AppStyle
+                                                                    .fontFamily,
+                                                            fontSize:
+                                                                AppStyle
+                                                                    .textSizeMedium,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        )
+                                                        : Text(
+                                                          'Đang tải lên...',
+                                                          style: TextStyle(
+                                                            color: Colors.red,
+                                                            fontFamily:
+                                                                AppStyle
+                                                                    .fontFamily,
+                                                            fontSize:
+                                                                AppStyle
+                                                                    .textSizeMedium,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                    // Text('x${widget.soLuong}'),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            'Tổng số tiền (${listDonHangDaGiao[index].soLuong} sản phẩm):',
+                                          ),
+                                          Text(
+                                            ' ${listDonHangDaGiao[index].price} đ',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: AppStyle.textSizeMedium,
+                                              color: Colors.red,
+                                              fontFamily: AppStyle.fontFamily,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    SizedBox(height: 5),
+                                    Divider(),
+                                    SizedBox(height: 5),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Cập nhật đơn hàng',
+                                            style: TextStyle(
+                                              fontSize: AppStyle.textSizeMedium,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          InkWell(
+                                            onTap: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return ThongBaoDaNhanDuocHang(
+                                                      context,
+                                                      listDonHangDaGiao[index]
+                                                          .id,
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                            child: Container(
+                                              padding: EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                color: Colors.green,
+                                              ),
+                                              child: Text(
+                                                'Đã nhận được hàng',
+                                                style: TextStyle(
+                                                  fontSize:
+                                                      AppStyle.textSizeMedium,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              : Container(
+                height: 200,
+                child: Center(
+                  child: Text(
+                    'Không có đơn hàng nào cả ! ',
+                    style: TextStyle(color: Colors.grey, fontSize: 25),
+                  ),
+                ),
+              ),
+
+          Padding(
+            padding: const EdgeInsets.only(top: 0, bottom: 100),
+            child: Text(
+              '',
+              style: TextStyle(
+                fontSize: AppStyle.textSizeMedium,
+                fontWeight: FontWeight.bold,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   //tab đã giao
-   Widget giaoDienDaGiao() {
+  Widget giaoDaNhanHang() {
     return SingleChildScrollView(
       child: Column(
         children: [
-           widget.listDonHangDaGiao!.isNotEmpty
+          listDanhGia.isNotEmpty
               ? Padding(
-                padding: EdgeInsets.only(left: 10, right: 10, bottom: 0, top: 10),
+                padding: EdgeInsets.only(
+                  left: 10,
+                  right: 10,
+                  bottom: 0,
+                  top: 10,
+                ),
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 0),
-      
+
                   child: Column(
                     children: [
                       ListView.builder(
                         shrinkWrap:
                             true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
                         physics: NeverScrollableScrollPhysics(),
-                        itemCount:  widget.listDonHangDaGiao!.length,
+                        itemCount: listDanhGia.length,
                         itemBuilder: (context, index) {
                           return InkWell(
                             onTap: () {
-                              print(widget.listDonHangDaGiao![index].id);
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listDanhGia[index], i: 3,)));
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -735,9 +1148,9 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                       children: [
                                         Icon(Icons.house_siding_sharp),
                                         SizedBox(width: 10),
-                                         widget.listDonHangDaGiao!.isNotEmpty
+                                        listDanhGia.isNotEmpty
                                             ? Text(
-                                              '${widget.listDonHangDaGiao![index].nameShop}',
+                                              '${listDanhGia[index].nameShop}',
                                               style: TextStyle(
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.bold,
@@ -770,13 +1183,14 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                               bottom: 10,
                                             ),
                                             child: ClipRRect(
-                                              borderRadius: BorderRadius.circular(
-                                                10,
-                                              ), // Bo tròn ảnh
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    10,
+                                                  ), // Bo tròn ảnh
                                               child:
-                                                   widget.listDonHangDaGiao!.isNotEmpty
+                                                  listDanhGia.isNotEmpty
                                                       ? Image.network(
-                                                        '${ widget.listDonHangDaGiao![index].imageUrl}',
+                                                        '${listDanhGia[index].imageUrl}',
                                                         fit: BoxFit.fill,
                                                       )
                                                       : Image.asset(
@@ -789,11 +1203,12 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                         Expanded(
                                           child: Container(
                                             height: 100,
-      
+
                                             // color: Colors.yellow,
                                             child: Column(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment.spaceBetween,
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
@@ -803,13 +1218,13 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                       alignment:
                                                           Alignment.centerLeft,
                                                       child:
-                                                           widget.listDonHangDaGiao!.isNotEmpty
+                                                          listDanhGia.isNotEmpty
                                                               ? Text(
                                                                 maxLines: 3,
                                                                 overflow:
                                                                     TextOverflow
                                                                         .ellipsis,
-                                                                '${widget.listDonHangDaGiao![index].name}',
+                                                                '${listDanhGia[index].name}',
                                                                 style: TextStyle(
                                                                   color:
                                                                       Colors
@@ -835,7 +1250,7 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                       alignment:
                                                           Alignment.centerRight,
                                                       child: Text(
-                                                        'x${widget.listDonHangDaGiao![index].soLuong}',
+                                                        'x${listDanhGia[index].soLuong}',
                                                       ),
                                                     ),
                                                   ],
@@ -844,9 +1259,9 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                   mainAxisAlignment:
                                                       MainAxisAlignment.end,
                                                   children: [
-                                                     widget.listDonHangDaGiao!.isNotEmpty
+                                                    listDanhGia.isNotEmpty
                                                         ? Text(
-                                                          '${widget.listDonHangDaGiao![index].price} đ',
+                                                          '${listDanhGia[index].price} đ',
                                                           style: TextStyle(
                                                             color: Colors.red,
                                                             fontFamily:
@@ -885,13 +1300,14 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
                                         children: [
                                           Text(
-                                            'Tổng số tiền (${widget.listDonHangDaGiao![index].soLuong} sản phẩm):',
+                                            'Tổng số tiền (${listDanhGia[index].soLuong} sản phẩm):',
                                           ),
                                           Text(
-                                            ' ${widget.listDonHangDaGiao![index].price} đ',
+                                            ' ${listDanhGia[index].price} đ',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: AppStyle.textSizeMedium,
@@ -908,10 +1324,11 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                     Align(
                                       alignment: Alignment.centerLeft,
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            'Trạng thái đơn hàng',
+                                            'Phản hồi đơn hàng',
                                             style: TextStyle(
                                               fontSize: AppStyle.textSizeMedium,
                                               fontWeight: FontWeight.bold,
@@ -920,18 +1337,88 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                           Container(
                                             padding: EdgeInsets.all(10),
                                             decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(
-                                                10,
-                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                               color: Colors.green,
                                             ),
-                                            child: Text(
-                                              '${widget.listDonHangDaGiao![index].status}',
-                                              style: TextStyle(
-                                                fontSize: AppStyle.textSizeMedium,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
+                                            child: FutureBuilder<bool>(
+                                              future: _firebauth.checkReview(
+                                                listDanhGia[index].id,
                                               ),
+                                              builder: (context, snapshot) {
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation<
+                                                            Color
+                                                          >(Colors.white),
+                                                    ),
+                                                  );
+                                                } else if (snapshot.hasError) {
+                                                  return Text(
+                                                    'Lỗi',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  );
+                                                } else if (snapshot.hasData &&
+                                                    snapshot.data == true) {
+                                                  return Text(
+                                                    'Đã đánh giá',
+                                                    style: TextStyle(
+                                                      fontSize:
+                                                          AppStyle
+                                                              .textSizeMedium,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                  );
+                                                } else {
+                                                  return InkWell(
+                                                    onTap: () async {
+                                                      final result = await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder:
+                                                              (
+                                                                context,
+                                                              ) => GiaoDienDanhGia(
+                                                                listDanhGia:
+                                                                    listDanhGia,
+                                                                index: index,
+                                                                email:
+                                                                    widget.email
+                                                                      .toString(),
+                                                                
+                                                           
+
+                                                              ),
+                                                        ),
+                                                      );
+                                                      if (result == true) {
+                                                        setState(() {});
+                                                      }
+                                                    },
+                                                    child: Text(
+                                                      'Đánh giá',
+                                                      style: TextStyle(
+                                                        fontSize:
+                                                            AppStyle
+                                                                .textSizeMedium,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
                                             ),
                                           ),
                                         ],
@@ -957,11 +1444,11 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                   ),
                 ),
               ),
-      
+
           Padding(
             padding: const EdgeInsets.only(top: 0, bottom: 100),
             child: Text(
-              ' - Có thể bạn cũng thích - ',
+              '',
               style: TextStyle(
                 fontSize: AppStyle.textSizeMedium,
                 fontWeight: FontWeight.bold,
@@ -971,6 +1458,81 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
           ),
         ],
       ),
+    );
+  }
+
+  //Xác nhận duyệt đơn hàng
+  Widget ThongBaoDaNhanDuocHang(BuildContext context, String id) {
+    return StatefulBuilder(
+      builder: (context, setStateFul) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check, color: Colors.green, size: 100),
+                Text(
+                  'Bạn đã nhận được đơn đặt hàng ?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: AppStyle.fontFamily,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Quay lại',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          nhanHangThanhCong(id);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Xác nhận',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

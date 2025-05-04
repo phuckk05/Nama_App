@@ -46,7 +46,9 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
       }
     }
     
-    setState(() {});
+   if(mounted){
+     setState(() {});
+   }
   }
 
   @override

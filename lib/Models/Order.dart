@@ -10,7 +10,10 @@ class DonHang {
   String emailBuy;
   String createdAt;
   String price;
+  String priceAll;
   String status;
+  bool hidenBuy;
+  bool hidenSell;
   
 
   DonHang({
@@ -25,7 +28,10 @@ class DonHang {
     required this.emailBuy,
     required this.createdAt,
     required this.price,
-    required this.status
+    required this.priceAll,
+    required this.status,
+    required this.hidenBuy,
+    required this.hidenSell
   });
 }
   

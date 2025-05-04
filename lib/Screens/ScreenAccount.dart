@@ -13,9 +13,11 @@ import 'package:nama_app/Screens/ScreenSetting.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+//còn lỗi load chậm , xóa xong chưa thêm được vào bên tab đã giao
+
 class GiaoDienTaiKhoan extends StatefulWidget {
   final String? email;
-  const GiaoDienTaiKhoan({Key? Key, this.email}) : super(key: Key);
+  GiaoDienTaiKhoan({Key? Key, this.email}) : super(key: Key);
 
   @override
   State<GiaoDienTaiKhoan> createState() => _GiaoDienTaiKhoanState();
@@ -32,7 +34,11 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
   List<DonHang> listDonHang = [];
   List<DonHang> listDonHangChoGiao = [];
   List<DonHang> listDonHangDaGiao = [];
-
+  List<DonHang> listDuyetDonHang = [];
+  List<Map<String, dynamic>> address = [];
+  List<Map<String, dynamic>> addressDaGiao = [];
+  List<String> index2 = [];
+  List<String> index3 = [];
   //on created
   @override
   void initState() {
@@ -45,9 +51,11 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
   // ignore: non_constant_identifier_names
   void _Lay_Thong_Tin_User() async {
     _result = await _firebauth.GetAllUser(widget.email.toString());
-    setState(() {
-      _split = _result.toString().split('+');
-    });
+    if (mounted) {
+      setState(() {
+        _split = _result.toString().split('+');
+      });
+    }
   }
 
   //xóa user khỏi sqlite
@@ -61,68 +69,70 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
   }
 
   //set color
-  void SetColor(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    Future.delayed(Duration(milliseconds: 50), () {
-      setState(() {
-        _selectedIndex = null;
-      });
-      if (index == 1) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => GiaoDienThongTin(email: widget.email.toString()),
-          ),
-        );
-      } else if (index == 2) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => GiaoDienThanhToan()),
-        );
-      } else if (index == 3) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => GiaoDienDiaChi(email: widget.email.toString()),
-          ),
-        );
-      } else if (index == 4) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => GiaoDienCaiDat()),
-        );
-      } else if(index == 5){
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => GiaoDienDonHang(
-                  email: widget.email.toString(),
-                  listDonHang: listDonHang,
-                  listDonHangChoGiao: listDonHangChoGiao,
-                  listDonHangDaGiao: listDonHangDaGiao,
-                ),
-          ),
-        );
+  void SetColor(int index) async {
+    if (index == 1) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => GiaoDienThongTin(email: widget.email.toString()),
+        ),
+      );
+      if (result == true) {
+        _Lay_Thong_Tin_User();
+        setState(() {});
       }
-      else{
-       
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) =>  GiaoDienQuanLyDonHang(
-                  email: widget.email.toString(),
-                 
-                ),
-          ),
-        );
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => GiaoDienThanhToan()),
+      );
+    } else if (index == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => GiaoDienDiaChi(email: widget.email.toString()),
+        ),
+      );
+    } else if (index == 4) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => GiaoDienCaiDat()),
+      );
+    } else if (index == 5) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => GiaoDienDonHang(
+                email: widget.email.toString(),
+                listDonHang: listDonHangDaGiao,
+              ),
+        ),
+      );
+      if (result == true) {
+        LayThonTinDonHang();
+        setState(() {});
       }
-    });
+    } else {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => GiaoDienQuanLyDonHang(
+                email: widget.email.toString(),
+                listDonHang: listDuyetDonHang,
+                address: address,
+                addressDaGiao: index2,
+                addressDaGiao2: index3,
+              ),
+        ),
+      );
+      if (result == true) {
+        LayThonTinDonHang();
+        setState(() {});
+      }
+    }
   }
 
   void LayThonTinDonHang() async {
@@ -135,8 +145,27 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
     listDonHangDaGiao = await _firebauth.GetOrderByEmailBuyDaGiao(
       widget.email.toString(),
     );
+    listDuyetDonHang = await _firebauth.getOrderSell(widget.email.toString());
 
-    // setState(() {});
+    List<String> index = [];
+
+    for (int i = 0; i < listDuyetDonHang.length; i++) {
+      if (listDuyetDonHang[i].status == "Chờ xác nhận") {
+        index.add(listDuyetDonHang[i].address.toString());
+      }
+      if (listDuyetDonHang[i].status == "Chờ giao") {
+        index2.add(listDuyetDonHang[i].address.toString());
+      }
+      if (listDuyetDonHang[i].status == "Đã giao") {
+        index2.add(listDuyetDonHang[i].address.toString());
+      }
+    }
+
+    // address = await _firebauth.getAddressById(index);
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -152,16 +181,17 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
               padding: const EdgeInsets.only(left: 15, right: 5),
               child: IconButton(
                 onPressed: () {
-                  Navigator.push(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder:
                           (context) =>
                               ProcessSccreen(email: widget.email.toString()),
                     ),
+                    (route) => false,
                   );
                 },
-                icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                icon: Icon(Icons.arrow_back_ios, color: Colors.black),
               ),
             ),
           ),
@@ -239,7 +269,21 @@ class _GiaoDienTaiKhoanState extends State<GiaoDienTaiKhoan> {
                           bottom: 0,
                           right: 0,
                           child: IconButton(
-                            onPressed: () {},
+                            onPressed: () async {
+                              final reslut = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => GiaoDienThongTin(
+                                        email: widget.email.toString(),
+                                      ),
+                                ),
+                              );
+                              if (reslut == true) {
+                                _Lay_Thong_Tin_User();
+                                setState(() {});
+                              }
+                            },
                             padding: EdgeInsets.zero,
                             constraints: BoxConstraints(),
                             icon: Icon(Icons.camera_alt, color: Colors.black),

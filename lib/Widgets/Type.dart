@@ -38,17 +38,18 @@ class _TypeState extends State<Type> {
                     height: 50,
                     decoration: BoxDecoration(
                       
-                      borderRadius: BorderRadius.circular(AppStyle.borderRadius),
+                      borderRadius: BorderRadius.circular(50),
                       border: Border.all(
-                        color: const Color.fromARGB(107, 151, 41, 41), // Màu viền
-                        width: 2, // Độ rộng viền
+                        color: Colors.black54, // Màu viền
+                        width: 1, // Độ rộng viền
                       ),
                     ),
                     child: ClipOval(
                       child: Image.network(widget.image, 
                       width: 40,
                       height: 40,
-                    )
+                      fit: BoxFit.fill,
+                    ),
                     ),
                                     ),
                   ),),

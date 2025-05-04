@@ -62,14 +62,14 @@ class _GiaoDienDiaChiState extends State<GiaoDienDiaChi> {
 
   //hàm bất đồng bộ xóa địa chỉ
   void XoaDiaChi(String id) async {
-    print(' id : $id');
-    // await _firebauth.DeleteAddress(id);
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   SnackBar(
-    //     backgroundColor: Colors.white,
-    //     content: Center(child: Text('Xóa thành công !')),
-    //   ),
-    // );
+    await _firebauth.DeleteAddress(id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.white,
+        content: Center(child: Text('Xóa thành công !', style: TextStyle(color: Colors.black),)),
+      ),
+    );
+    setState(() {});
   }
 
   //on created
@@ -121,6 +121,8 @@ class _GiaoDienDiaChiState extends State<GiaoDienDiaChi> {
     });
   }
   
+
+
 
   @override
   void dispose() {
@@ -180,7 +182,7 @@ class _GiaoDienDiaChiState extends State<GiaoDienDiaChi> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(height: 10, color: Colors.blueGrey),
+              Container(height: 10, color: Colors.grey),
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Text(
