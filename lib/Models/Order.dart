@@ -1,4 +1,6 @@
+//Model đơn hàng
 class DonHang {
+  //Properties
   String id;
   String idProducts;
   String name;
@@ -15,7 +17,7 @@ class DonHang {
   bool hidenBuy;
   bool hidenSell;
   
-
+  //Constructor
   DonHang({
     required this.id,
     required this.idProducts,

@@ -5,6 +5,7 @@ import 'package:nama_app/Models/Order.dart';
 import 'package:nama_app/Screens/ScreenDetail.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
+// ignore: must_be_immutable
 class GiaoDienQuanLyDonHang extends StatefulWidget {
   final String? email;
   List<DonHang>? listDonHang;
@@ -26,83 +27,135 @@ class GiaoDienQuanLyDonHang extends StatefulWidget {
 
 class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
     with SingleTickerProviderStateMixin {
+  // Khai báo controller cho TabBar gồm 4 tab
   late TabController _tabController;
+
+  // Khởi tạo đối tượng để thao tác với Firebase Authentication hoặc Firestore (Firebauth là class custom)
   Firebauth _firebauth = Firebauth();
-  List<DonHang> listChoXacNhan = [];
-  List<DonHang> listChoGiao = [];
-  List<DonHang> listDaGiao = [];
-  List<DonHang> listChuaNhan = [];
+
+  // Các danh sách đơn hàng theo trạng thái
+  List<DonHang> listChoXacNhan = []; // Đơn hàng chờ xác nhận
+  List<DonHang> listChoGiao = []; // Đơn hàng đã duyệt, chờ giao hàng
+  List<DonHang> listDaGiao = []; // Đơn hàng đã giao, người dùng đã nhận
+  List<DonHang> listChuaNhan = []; // Đơn hàng đã giao nhưng chưa xác nhận đã nhận
+
+  // Tương lai sẽ chứa thông tin địa chỉ (có thể dùng để fetch từ Firestore hoặc xử lý async khác)
+  // ignore: unused_field
   late Future<List<Map<String, dynamic>>> _addressFuture;
+  // ignore: unused_field
   late Future<List<Map<String, dynamic>>> _addressFutureDaGiao;
-  //lọc status
+
+  // Hàm lọc danh sách đơn hàng dựa trên trạng thái (status)
   void locStatus() {
+    // Lọc các đơn hàng có trạng thái "Chờ xác nhận"
     listChoXacNhan =
         widget.listDonHang
             ?.where((item) => item.status == "Chờ xác nhận")
             .toList() ??
         [];
 
+    // Lọc đơn hàng có trạng thái "Chờ giao"
     listChoGiao =
         widget.listDonHang
             ?.where((item) => item.status == "Chờ giao")
             .toList() ??
         [];
+
+    // Lọc đơn hàng đã giao nhưng chưa xác nhận nhận hàng
     listChuaNhan =
         widget.listDonHang
             ?.where((item) => item.status == "Đã giao")
             .toList() ??
         [];
+
+    // Lọc đơn hàng đã giao và người nhận xác nhận đã nhận
     listDaGiao =
         widget.listDonHang
             ?.where((item) => item.status == "Đã nhận hàng")
             .toList() ??
         [];
+    if (mounted) setState(() {});
   }
 
   @override
   void initState() {
     super.initState();
+    // Khởi tạo TabController với 4 tab
     _tabController = TabController(length: 4, vsync: this);
+
+    // Gọi hàm lọc trạng thái đơn hàng ban đầu
     locStatus();
-    setState(() {});
+
+    // Cập nhật lại UI
+    if (mounted) setState(() {});
+    print("sl :  ${widget.listDonHang!.length}");
   }
 
-  //Update duyệt đơn hàng
+  // Hàm cập nhật đơn hàng từ "Chờ xác nhận" => "Chờ giao"
   void capNhatDonHangDuyet(String id) async {
+    // Tạo danh sách địa chỉ mới
+    // ignore: unused_local_variable
     List<String> idAdress = [];
+
+    // Tìm đơn hàng trong danh sách chờ xác nhận
     for (var item in listChoXacNhan) {
       if (item.id == id) {
-        item.status = 'Chờ giao';
-        listChoGiao.add(item);
-        widget.addressDaGiao!.add(item.address);
+        item.status = 'Chờ giao'; // Cập nhật trạng thái
+        listChoGiao.add(item); // Thêm vào danh sách chờ giao
+        widget.addressDaGiao!.add(item.address); // Cập nhật địa chỉ đơn giao
       }
     }
+
+    // Xóa đơn đã duyệt khỏi danh sách chờ xác nhận
     listChoXacNhan.removeWhere((element) => element.id == id);
+
+    // Cập nhật UI
     setState(() {});
+
+    // Gọi hàm xử lý cập nhật trạng thái trong Firestore
     await _firebauth.duyetDonHang(id);
+
+    // Cập nhật lại UI sau khi cập nhật Firebase
     setState(() {});
   }
 
-  //Update update don da giao
+  // Hàm cập nhật đơn hàng từ "Chờ giao" => "Đã giao"
   void capNhatDonDaGiao(String id) async {
     for (var item in listChoGiao) {
       if (item.id == id) {
+        // Thêm địa chỉ vào danh sách đơn đã giao (nhưng chưa xác nhận đã nhận)
         widget.addressDaGiao2!.add(item.address);
+
+        // Thêm đơn hàng vào danh sách đã giao
         listChuaNhan.add(item);
       }
     }
 
+    // Xóa đơn khỏi danh sách chờ giao
     listChoGiao.removeWhere((element) => element.id == id);
+
+    // Cập nhật UI
     setState(() {});
+
+    // Gọi hàm cập nhật trạng thái trong Firestore
     await _firebauth.updatedDaGiao(id);
+
+    // Cập nhật lại UI sau khi cập nhật Firebase
     setState(() {});
   }
 
-  //Update hủy đơn hàng
+  // Hàm xử lý hủy đơn hàng (xóa khỏi danh sách chờ xác nhận)
   void capNhatDonHangHuy(String id) async {
+    // Xóa đơn hàng bị hủy khỏi danh sách chờ xác nhận
     listChoXacNhan.removeWhere((element) => element.id == id);
+
+    // Cập nhật UI
     setState(() {});
+
+    // Gọi Firebase để cập nhật trạng thái đơn hàng bị hủy
     await _firebauth.huyDonHang(id);
+
+    // Cập nhật UI lần nữa sau khi cập nhật Firebase
     setState(() {});
   }
 
@@ -162,44 +215,54 @@ class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
           ],
         ),
         backgroundColor: Colors.grey[300],
-        body: Column(
-          children: [
-            Container(
-              color: Colors.white,
-              child: TabBar(
-                isScrollable: false,
-                controller: _tabController,
-                labelPadding: EdgeInsets.symmetric(horizontal: 0.0),
-                labelColor: Colors.black,
-                unselectedLabelColor: Colors.black54,
-                indicatorColor: Colors.black,
-                labelStyle: TextStyle(
-                  fontSize: AppStyle.textSizeMedium,
-                  fontWeight: FontWeight.bold,
-                ),
-                tabs: [
-                  Tab(text: 'Duyệt đơn'),
-                  Tab(text: 'Gửi hàng'),
-                  Tab(text: 'Chưa nhận'),
-                  Tab(text: 'Đã Nhận'),
-                  // Tab(text: 'Hàng'),
-                ],
-              ),
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  duyetonHang(),
-                  guiDonHangDi(),
-                  guiChuaNhan(),
-                  guiDaGiao(),
-                ],
-              ),
-            ),
-          ],
-        ),
+        body: body(),
       ),
+    );
+  }
+
+  Widget body() {
+    return Column(
+      children: [
+        // Phần header chứa TabBar để chuyển giữa các trạng thái đơn hàng
+        Container(
+          color: Colors.white, // Nền trắng cho tab
+          child: TabBar(
+            isScrollable: false, // Không cho cuộn tab, hiển thị cố định
+            controller:
+                _tabController, // Sử dụng controller đã khai báo ở initState
+            labelPadding: EdgeInsets.symmetric(
+              horizontal: 0.0,
+            ), // Không padding ngang
+            labelColor: Colors.black, // Màu của tab đang chọn
+            unselectedLabelColor: Colors.black54, // Màu của tab chưa được chọn
+            indicatorColor: Colors.black, // Màu thanh gạch chân bên dưới tab
+            labelStyle: TextStyle(
+              fontSize: AppStyle.textSizeMedium, // Kích thước chữ của tab
+              fontWeight: FontWeight.bold, // In đậm
+            ),
+            tabs: [
+              Tab(text: 'Duyệt đơn'), // Tab 1: Danh sách đơn cần duyệt
+              Tab(text: 'Gửi hàng'), // Tab 2: Danh sách đơn đã duyệt, chờ giao
+              Tab(text: 'Chưa nhận'), // Tab 3: Đơn hàng đã giao, chưa xác nhận
+              Tab(text: 'Đã Nhận'), // Tab 4: Đơn hàng đã nhận xong
+            ],
+          ),
+        ),
+
+        // Phần nội dung dưới TabBar, mỗi Tab tương ứng với một Widget hiển thị danh sách đơn
+        Expanded(
+          child: TabBarView(
+            controller:
+                _tabController, // Controller để điều khiển TabBarView đồng bộ với TabBar
+            children: [
+              duyetonHang(), // Widget hiển thị danh sách đơn chờ duyệt
+              guiDonHangDi(), // Widget hiển thị danh sách đơn chờ giao
+              guiChuaNhan(), // Widget hiển thị đơn đã giao nhưng chưa xác nhận nhận hàng
+              guiDaGiao(), // Widget hiển thị đơn đã xác nhận nhận hàng
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -210,7 +273,7 @@ class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
       child: SingleChildScrollView(
         child: Column(
           children: [
-            widget.address!.isNotEmpty && listChoXacNhan.isNotEmpty
+           listChoXacNhan.isNotEmpty
                 ? Padding(
                   padding: EdgeInsets.only(
                     left: 0,
@@ -229,9 +292,20 @@ class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
                           physics: NeverScrollableScrollPhysics(),
                           itemCount: listChoXacNhan.length,
                           itemBuilder: (context, index) {
+                           print(' sl1 : ${listChoXacNhan.length}');
                             return InkWell(
                               onTap: () {
-                                   Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoXacNhan[index], i: 0,)));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => GiaoDienChiTietDonHang(
+                                          email: widget.email,
+                                          items: listChoXacNhan[index],
+                                          i: 0,
+                                        ),
+                                  ),
+                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
@@ -630,7 +704,18 @@ class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
                           itemCount: listChoGiao.length,
                           itemBuilder: (context, index) {
                             return InkWell(
-                              onTap: () {  Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoGiao[index], i: 1,)));
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => GiaoDienChiTietDonHang(
+                                          email: widget.email,
+                                          items: listChoGiao[index],
+                                          i: 1,
+                                        ),
+                                  ),
+                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
@@ -1004,7 +1089,17 @@ class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
                           itemBuilder: (context, index) {
                             return InkWell(
                               onTap: () {
-                                 Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoXacNhan[index], i: 2,)));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => GiaoDienChiTietDonHang(
+                                          email: widget.email,
+                                          items: listChoXacNhan[index],
+                                          i: 2,
+                                        ),
+                                  ),
+                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 10),
@@ -1366,7 +1461,17 @@ class _GiaoDienQuanLyDonHangState extends State<GiaoDienQuanLyDonHang>
                           itemBuilder: (context, index) {
                             return InkWell(
                               onTap: () {
-                                 Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listDaGiao[index], i: 3,)));
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => GiaoDienChiTietDonHang(
+                                          email: widget.email,
+                                          items: listDaGiao[index],
+                                          i: 3,
+                                        ),
+                                  ),
+                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 10),

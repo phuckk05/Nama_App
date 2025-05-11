@@ -9,72 +9,82 @@ class GiaoDienThongBao extends StatefulWidget {
   final String? email;
   final List<Map<String, dynamic>>? items;
   final List<Map<String, dynamic>>? itemsBuy;
-   GiaoDienThongBao({super.key, this.email, this.items, this.itemsBuy});
+  GiaoDienThongBao({super.key, this.email, this.items, this.itemsBuy});
 
   @override
   State<GiaoDienThongBao> createState() => _GiaoDienThongBaoState();
 }
 
 class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
+  // Khai báo đối tượng Firebauth để sử dụng các phương thức của Firebase
   Firebauth _firebauth = Firebauth();
-  int flexTren = 1;
-  int flexDuoi = 9;
-  bool offstateXoa = true;
-  String textXoa = 'Xóa';
+  int flexTren = 1; // Biến để điều chỉnh flex cho widget ở trên
+  int flexDuoi = 9; // Biến để điều chỉnh flex cho widget ở dưới
+  bool offstateXoa = true; // Biến trạng thái để bật/tắt chức năng xóa
+  String textXoa = 'Xóa'; // Chữ hiển thị cho nút xóa
 
-  //set flex
+  // Hàm thiết lập giá trị flex cho các widget dựa trên số lượng item
   void SetFlex() {
-    // print(widget.items.length);
+    // Kiểm tra số lượng item trong widget.items và thay đổi giá trị flex tương ứng
     if (widget.items!.length == 1) {
       setState(() {
-        flexTren = 1;
-        flexDuoi = 7;
+        flexTren = 1; // Flex cho phần trên khi có 1 item
+        flexDuoi = 7; // Flex cho phần dưới khi có 1 item
       });
     } else if (widget.items!.length == 2) {
       setState(() {
-        flexTren = 3;
-        flexDuoi = 9;
+        flexTren = 3; // Flex cho phần trên khi có 2 item
+        flexDuoi = 9; // Flex cho phần dưới khi có 2 item
       });
     } else if (widget.items!.length == 3) {
       setState(() {
-        flexTren = 3;
-        flexDuoi = 5;
+        flexTren = 3; // Flex cho phần trên khi có 3 item
+        flexDuoi = 5; // Flex cho phần dưới khi có 3 item
       });
     } else if (widget.items!.length >= 4) {
       setState(() {
-        flexTren = 5;
-        flexDuoi = 5;
+        flexTren = 5; // Flex cho phần trên khi có 4 hoặc nhiều hơn
+        flexDuoi = 5; // Flex cho phần dưới khi có 4 hoặc nhiều hơn
       });
     } else {
       setState(() {
-        flexTren = 1;
-        flexDuoi = 9;
+        flexTren = 1; // Mặc định flex cho phần trên khi không có item
+        flexDuoi = 9; // Mặc định flex cho phần dưới khi không có item
       });
     }
   }
 
-  //update ản đi thông báo bán sản phẩm
+  // Hàm cập nhật trạng thái "ẩn thông báo bán sản phẩm" khi xóa sản phẩm
   void updateHidenSell(String id) async {
-    _firebauth.updateHidenSell(id);
-    widget.items!.removeWhere((item) => item['idOrder'] == id);
-    SetFlex();
-    setState(() {});
+    _firebauth.updateHidenSell(
+      id,
+    ); // Gọi phương thức từ Firebauth để ẩn thông báo bán
+    widget.items!.removeWhere(
+      (item) => item['idOrder'] == id,
+    ); // Xóa sản phẩm khỏi danh sách
+    SetFlex(); // Cập nhật lại flex khi sản phẩm bị xóa
+    setState(() {}); // Cập nhật lại giao diện
   }
 
-  //update ản đi thông báo mua sản phẩm
+  // Hàm cập nhật trạng thái "ẩn thông báo mua sản phẩm" khi xóa sản phẩm
   void updateHidenBuy(String id) async {
-    _firebauth.updateHidenBuy(id);
-    widget.itemsBuy!.removeWhere((item) => item['idOrder'] == id);
-    SetFlex();
-    setState(() {});
+    _firebauth.updateHidenBuy(
+      id,
+    ); // Gọi phương thức từ Firebauth để ẩn thông báo mua
+    widget.itemsBuy!.removeWhere(
+      (item) => item['idOrder'] == id,
+    ); // Xóa sản phẩm khỏi danh sách mua
+    SetFlex(); // Cập nhật lại flex khi sản phẩm bị xóa
+    setState(() {}); // Cập nhật lại giao diện
   }
 
+  // Hàm khởi tạo trạng thái ban đầu khi widget được tạo
   @override
   void initState() {
     super.initState();
-    // layThongTin();
+    // Cập nhật flex khi widget được khởi tạo
     SetFlex();
-    setState(() {});
+    setState(() {}); // Cập nhật lại giao diện
   }
 
   @override
@@ -91,7 +101,7 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
               padding: const EdgeInsets.only(left: 15, right: 5),
               child: IconButton(
                 onPressed: () {
-                 Navigator.pushAndRemoveUntil(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder:
@@ -133,148 +143,151 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            height: 40,
+      body: body(),
+    );
+  }
 
-            decoration: BoxDecoration(color: Colors.grey[400]),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Thông báo sản phẩm đăng bán',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  // Text(
-                  //   'Xem đơn đặt hàng',
-                  //   style: TextStyle(
-                  //     fontWeight: FontWeight.bold,
-                  //     color: Colors.blue,
-                  //     fontSize: AppStyle.textSizeMedium,
-                  //   ),
-                  // ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(flex: flexTren, child: _danhSachThongBaoSanPham()),
-          Container(
-            width: double.infinity,
-            height: 40,
-
-            decoration: BoxDecoration(color: Colors.grey[400]),
+  // Widget body chính chứa giao diện của màn hình
+  Widget body() {
+    return Column(
+      children: [
+        // Tiêu đề phần thông báo sản phẩm đăng bán
+        Container(
+          width: double.infinity,
+          height: 40,
+          decoration: BoxDecoration(color: Colors.grey[400]), // Màu nền xám
+          child: Padding(
+            padding: const EdgeInsets.only(left: 10, right: 10),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Căn lề giữa
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Text(
-                    'Cập nhật đơn đặt hàng',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: Row(
-                    children: [
-                      // Text(
-                      //   'Quản lý',
-                      //   style: TextStyle(
-                      //     fontWeight: FontWeight.bold,
-                      //     color: Colors.blue,
-                      //   ),
-                      // ),
-                      SizedBox(width: 20),
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            textXoa = textXoa == "Xóa" ? "Xong" : "Xóa";
-                            offstateXoa = offstateXoa == true ? false : true;
-                          });
-                        },
-                        child: Text(
-                          '$textXoa',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                            fontSize: AppStyle.textSizeMedium,
-                          ),
-                        ),
-                      ),
-                    ],
+                Text(
+                  'Thông báo sản phẩm đăng bán', // Tiêu đề
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54, // Màu chữ xám đậm
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(flex: flexDuoi, child: _ThongTinDonDatHang()),
-        ],
-      ),
+        ),
+        // Phần hiển thị danh sách thông báo sản phẩm
+        Expanded(flex: flexTren, child: _danhSachThongBaoSanPham()),
+
+        // Tiêu đề phần cập nhật đơn đặt hàng
+        Container(
+          width: double.infinity,
+          height: 40,
+          decoration: BoxDecoration(color: Colors.grey[400]), // Màu nền xám
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, // Căn lề giữa
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 10),
+                child: Text(
+                  'Cập nhật đơn đặt hàng', // Tiêu đề
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54, // Màu chữ xám đậm
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Row(
+                  children: [
+                    SizedBox(width: 20),
+                    InkWell(
+                      onTap: () {
+                        // Đổi trạng thái của nút xóa khi nhấn
+                        setState(() {
+                          textXoa =
+                              textXoa == "Xóa"
+                                  ? "Xong"
+                                  : "Xóa"; // Toggle giữa "Xóa" và "Xong"
+                          offstateXoa = !offstateXoa; // Chuyển trạng thái xóa
+                        });
+                      },
+                      child: Text(
+                        '$textXoa', // Hiển thị chữ "Xóa" hoặc "Xong"
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue, // Màu chữ xanh
+                          fontSize:
+                              AppStyle
+                                  .textSizeMedium, // Kích thước chữ từ AppStyle
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Phần hiển thị thông tin đơn đặt hàng
+        Expanded(flex: flexDuoi, child: _ThongTinDonDatHang()),
+      ],
     );
   }
 
-  //danh sach sản phẩm
+  // Widget danh sách thông báo sản phẩm
   Widget _danhSachThongBaoSanPham() {
     return widget.items!.isNotEmpty
         ? ListView.builder(
-          itemCount: widget.items!.length,
+          itemCount: widget.items!.length, // Số lượng item trong danh sách
           itemBuilder: (context, index) {
+            // Lấy thời gian tạo đơn hàng từ item và chuyển đổi chuỗi thành DateTime
             String createdAtString = widget.items![index]['createdAt'];
-
-            // Chuyển đổi chuỗi createdAt thành DateTime
             DateTime createdAt = DateFormat(
               'yyyy-MM-dd HH:mm:ss',
             ).parse(createdAtString);
             DateTime currentDateTime = DateTime.now();
             Duration difference = currentDateTime.difference(createdAt);
 
-            // Kiểm tra thời gian khác biệt
+            // Tính toán thời gian đã trôi qua kể từ khi đơn hàng được tạo
             String displayTime;
             if (difference.inMinutes < 60) {
-              displayTime = "${difference.inMinutes} phút trước";
+              displayTime =
+                  "${difference.inMinutes} phút trước"; // Nếu chưa đủ 1 giờ
             } else if (difference.inHours < 24) {
-              displayTime = "${difference.inHours} giờ trước";
+              displayTime =
+                  "${difference.inHours} giờ trước"; // Nếu chưa đủ 1 ngày
             } else {
-              displayTime = "${difference.inDays} ngày trước";
+              displayTime =
+                  "${difference.inDays} ngày trước"; // Nếu đã qua nhiều ngày
             }
+
+            // Hiển thị thông báo sản phẩm đăng bán
             return Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.only(top: 5, left: 10, right: 10),
                   child: Container(
                     width: double.infinity,
-
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(5),
+                      color: Colors.white, // Màu nền trắng
+                      borderRadius: BorderRadius.circular(5), // Bo góc
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black54, // màu đổ bóng
-                          blurRadius: 10, // độ mờ của bóng
-                          offset: Offset(0, 2), // đẩy bóng xuống dưới
+                          color: Colors.black54, // Màu bóng
+                          blurRadius: 10, // Độ mờ của bóng
+                          offset: Offset(0, 2), // Vị trí bóng
                         ),
                       ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
+                        scrollDirection: Axis.horizontal, // Cuộn ngang
                         child: InkWell(
                           onTap: () {
-                            // print(items[index]['idOrder']);
+                            // Hàm xử lý khi người dùng nhấn vào thông báo, có thể mở chi tiết đơn hàng
                           },
                           child: Row(
                             children: [
+                              // Hiển thị thông tin người mua và thời gian
                               RichText(
                                 text: TextSpan(
                                   children: [
@@ -303,7 +316,8 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                     ),
                                     widget.items!.isNotEmpty
                                         ? TextSpan(
-                                          text: " $displayTime",
+                                          text:
+                                              " $displayTime", // Hiển thị thời gian
                                           style: TextStyle(
                                             color: Colors.black26,
                                             fontWeight: FontWeight.w500,
@@ -322,17 +336,19 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                 ),
                               ),
                               SizedBox(width: 10),
+                              // Nút "Xóa" để ẩn thông báo khi người dùng nhấn vào
                               SizedBox(
                                 width: 100,
                                 child: FloatingActionButton(
-                                  mini: true,
-                                  elevation: 5,
+                                  mini: true, // Nút nhỏ
+                                  elevation: 5, // Độ cao bóng
                                   onPressed: () {
+                                    // Xử lý xóa thông báo
                                     updateHidenSell(
                                       widget.items![index]['idOrder'],
                                     );
                                   },
-                                  child: Text('Xóa'),
+                                  child: Text('Xóa'), // Chữ "Xóa"
                                 ),
                               ),
                             ],
@@ -348,75 +364,87 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
         )
         : Container(
           height: 100,
-          child: Center(child: Text('Không có thông báo !')),
+          child: Center(
+            child: Text('Không có thông báo !'),
+          ), // Thông báo khi không có item
         );
   }
 
+  // Widget hiển thị thông tin đơn đặt hàng
   Widget _ThongTinDonDatHang() {
+    // Kiểm tra nếu có đơn hàng để hiển thị
     return widget.itemsBuy!.isNotEmpty
         ? ListView.builder(
-          itemCount: widget.itemsBuy!.length,
+          itemCount:
+              widget.itemsBuy!.length, // Số lượng đơn hàng trong danh sách
           itemBuilder: (context, index) {
+            // Lấy thời gian tạo đơn hàng từ item và chuyển chuỗi thành DateTime
             String createdAtString = widget.itemsBuy![index]['createdAt'];
-
-            // Chuyển đổi chuỗi createdAt thành DateTime
             DateTime createdAt = DateFormat(
               'yyyy-MM-dd HH:mm:ss',
             ).parse(createdAtString);
             DateTime currentDateTime = DateTime.now();
             Duration difference = currentDateTime.difference(createdAt);
 
-            // Kiểm tra thời gian khác biệt
+            // Tính toán thời gian đã trôi qua kể từ khi đơn hàng được tạo
             String displayTime;
             if (difference.inMinutes < 60) {
-              displayTime = "${difference.inMinutes} phút trước";
+              displayTime =
+                  "${difference.inMinutes} phút trước"; // Nếu chưa đủ 1 giờ
             } else if (difference.inHours < 24) {
-              displayTime = "${difference.inHours} giờ trước";
+              displayTime =
+                  "${difference.inHours} giờ trước"; // Nếu chưa đủ 1 ngày
             } else {
-              displayTime = "${difference.inDays} ngày trước";
+              displayTime =
+                  "${difference.inDays} ngày trước"; // Nếu đã qua nhiều ngày
             }
+
             return Column(
               children: [
                 InkWell(
                   onTap: () {
+                    // In ID của đơn hàng khi nhấn vào
                     print(widget.itemsBuy![index]['idOrder']);
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(top: 5, left: 0, right: 0),
                     child: Container(
                       width: double.infinity,
-
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(0),
+                        color: Colors.white, // Màu nền trắng
+                        borderRadius: BorderRadius.circular(0), // Không bo góc
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black54, // màu đổ bóng
-                            blurRadius: 1, // độ mờ của bóng
-                            offset: Offset(0, 1), // đẩy bóng xuống dưới
+                            color: Colors.black54, // Màu bóng
+                            blurRadius: 1, // Độ mờ của bóng
+                            offset: Offset(0, 1), // Đẩy bóng xuống dưới
                           ),
                         ],
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.stretch, // Căn lề trái phải
                           children: [
+                            // Hiển thị thông tin sản phẩm
                             Row(
                               children: [
                                 Text(
                                   'Sản phẩm : ',
                                   style: TextStyle(
                                     fontSize: AppStyle.textSizeMedium,
-                                    color: Colors.black54,
+                                    color: Colors.black54, // Màu chữ xám đậm
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Expanded(
                                   flex: 9,
                                   child: Text(
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1, // Chỉ hiển thị 1 dòng
+                                    overflow:
+                                        TextOverflow
+                                            .ellipsis, // Hiển thị "..." nếu dài
                                     '${widget.itemsBuy![index]['name']} ',
                                     style: TextStyle(
                                       fontSize: AppStyle.textSizeMedium,
@@ -429,7 +457,7 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                   child: Text(
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    '(x${widget.itemsBuy![index]['soLuong']})',
+                                    '(x${widget.itemsBuy![index]['soLuong']})', // Số lượng sản phẩm
                                     style: TextStyle(
                                       fontSize: AppStyle.textSizeSmall,
                                     ),
@@ -437,12 +465,16 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                 ),
                               ],
                             ),
+                            // Hiển thị trạng thái đơn hàng và thời gian
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                                  MainAxisAlignment
+                                      .spaceBetween, // Căn lề 2 đầu
                               children: [
                                 RichText(
                                   text: TextSpan(
                                     children: [
+                                      // Kiểm tra và hiển thị trạng thái của đơn hàng
                                       if (widget.itemsBuy![index]['status'] ==
                                           "Chờ xác nhận")
                                         TextSpan(
@@ -506,19 +538,9 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                     ],
                                   ),
                                 ),
-
-                                // SizedBox(width: 10),
-                                // SizedBox(
-                                //   width: 100,
-                                //   child: FloatingActionButton(
-                                //     mini: true,
-                                //     elevation: 5,
-                                //     onPressed: () {},
-                                //     child: Text('Xóa'),
-                                //   ),
-                                // ),
+                                // Hiển thị thời gian đã trôi qua từ khi đơn hàng được tạo
                                 Text(
-                                  '$displayTime',
+                                  '$displayTime', // Hiển thị thời gian đã trôi qua
                                   style: TextStyle(
                                     color: Colors.black26,
                                     fontWeight: FontWeight.w500,
@@ -527,11 +549,13 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                 ),
                               ],
                             ),
-
+                            // Phần để hiển thị nút "Xóa" (ẩn nếu offstateXoa là true)
                             Offstage(
-                              offstage: offstateXoa,
+                              offstage:
+                                  offstateXoa, // Kiểm tra trạng thái ẩn hay hiện
                               child: InkWell(
                                 onTap: () {
+                                  // Xử lý xóa đơn hàng khi nhấn vào nút "Xóa"
                                   updateHidenBuy(
                                     widget.itemsBuy![index]['idOrder'],
                                   );
@@ -546,9 +570,9 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
                                     ),
                                     child: Center(
                                       child: Text(
-                                        'Xóa',
+                                        'Xóa', // Chữ "Xóa"
                                         style: TextStyle(
-                                          color: Colors.red,
+                                          color: Colors.red, // Màu chữ đỏ
                                           fontSize: AppStyle.textSizeTitle,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -570,7 +594,9 @@ class _GiaoDienThongBaoState extends State<GiaoDienThongBao> {
         )
         : Container(
           height: 100,
-          child: Center(child: Text('Không có thông báo !')),
+          child: Center(
+            child: Text('Không có thông báo !'),
+          ), // Thông báo khi không có đơn hàng
         );
   }
 }

@@ -20,28 +20,9 @@ class _GiaoDienThanhToanState extends State<GiaoDienThanhToan> {
   ];
 
   void _showAddBankSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => ListView(
-        children: availableBanks.map((bank) {
-          return ListTile(
-            leading: Icon(Icons.account_balance, color: Colors.blueAccent),
-            title: Text(bank['name']!),
-            subtitle: Text("Số TK: ${bank['account']!}\nChủ TK: ${bank['owner']!}"),
-            trailing: TextButton(
-              onPressed: () {
-                setState(() {
-                  linkedBanks.add(bank);
-                  availableBanks.remove(bank);
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Liên kết", style: TextStyle(color: Colors.green)),
-            ),
-          );
-        }).toList(),
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Center(child: Text('Tính năng đang phát triển')))
+      );
   }
 
   void _removeLinkedBank(int index) {
@@ -99,26 +80,20 @@ class _GiaoDienThanhToanState extends State<GiaoDienThanhToan> {
         padding: EdgeInsets.all(16),
         child: ListView(
           children: [
-            _buildSectionTitle('Ngân hàng đã liên kết'),
-            if (linkedBanks.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('Chưa có ngân hàng nào được liên kết'),
-              )
-            else
-              ...linkedBanks.asMap().entries.map((entry) {
-                int index = entry.key;
-                var bank = entry.value;
-                return ListTile(
-                  leading: Icon(Icons.account_balance_wallet_outlined),
-                  title: Text(bank['name']!, style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('Số TK: ${bank['account']!}\nChủ TK: ${bank['owner']!}'),
-                  trailing: TextButton(
-                    onPressed: () => _removeLinkedBank(index),
-                    child: Text("Hủy liên kết", style: TextStyle(color: Colors.red)),
+            _buildSectionTitle('Các phướng thức thanh toán'),
+           
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text('Thanh toán khi nhận hàng'),
                   ),
-                );
-              }),
+                  Icon(Icons.check, color: Colors.green,)
+                ],
+                
+              ),
+            
             Divider(thickness: 1, height: 32),
             _buildSectionTitle('Thêm phương thức'),
             ListTile(

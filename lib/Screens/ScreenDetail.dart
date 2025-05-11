@@ -83,114 +83,121 @@ class _GiaoDienChiTietDonHangState extends State<GiaoDienChiTietDonHang> {
         ),
 
         // Nội dung chính
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAddressSection(), // Thông tin địa chỉ
-              SizedBox(height: 20),
-
-              // Tiêu đề chi tiết sản phẩm
-              Text(
-                'Chi tiết sản phẩm',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(height: 10),
-
-              // Thông tin sản phẩm
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Hình ảnh sản phẩm
-                    Container(
-                      width: double.infinity,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            offset: Offset(0, 4),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.network(
-                          '${widget.items!.imageUrl}',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    // Tên sản phẩm
-                    Text(
-                      '${widget.items!.name}',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-
-                    // Số lượng
-                    Text(
-                      'x${widget.items!.soLuong}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[600],
-                        fontSize: 16,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-
-                    // Tổng thanh toán
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Tổng thanh toán',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black54,
-                            fontSize: 16,
-                          ),
-                        ),
-                        Text(
-                          '${widget.items!.priceAll} đ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Divider(color: Colors.grey[300], thickness: 1, height: 20),
-                  ],
-                ),
-              ),
-
-              // Hiển thị trạng thái đơn hàng
-              _buildStatusStepper(),
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
+        body: body(),
       ),
     );
   }
+
   Firebauth _firebauth = Firebauth();
+  Widget body() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAddressSection(), // Thông tin địa chỉ
+          SizedBox(height: 10),
+          _buildPhongThucThanhToan(),
+          SizedBox(height: 10),
+
+          // Tiêu đề chi tiết sản phẩm
+          Text(
+            'Chi tiết sản phẩm',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          SizedBox(height: 10),
+
+          // Thông tin sản phẩm
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hình ảnh sản phẩm
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        offset: Offset(0, 4),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.network(
+                      '${widget.items!.imageUrl}',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                // Tên sản phẩm
+                Text(
+                  '${widget.items!.name}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4),
+
+                // Số lượng
+                Text(
+                  'x${widget.items!.soLuong}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[600],
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(height: 12),
+
+                // Tổng thanh toán
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Tổng thanh toán',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      '${widget.items!.priceAll} đ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                Divider(color: Colors.grey[300], thickness: 1, height: 20),
+              ],
+            ),
+          ),
+
+          // Hiển thị trạng thái đơn hàng
+          _buildStatusStepper(),
+          SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
   // Widget địa chỉ nhận hàng
   Widget _buildAddressSection() {
     print(widget.items!.address);
-    return FutureBuilder<List<Map<String, dynamic>>> (
+    return FutureBuilder<List<Map<String, dynamic>>>(
       future: _firebauth.getAddressById(widget.items!.address.toString()),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -210,6 +217,22 @@ class _GiaoDienChiTietDonHangState extends State<GiaoDienChiTietDonHang> {
           ),
         );
       },
+    );
+  }
+  // Widget địa chỉ nhận hàng
+  Widget _buildPhongThucThanhToan() {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Thanh toán khi nhận hàng'),
+            Icon(Icons.check)
+          ],
+        ),
+      ),
     );
   }
 

@@ -11,72 +11,86 @@ class GiaoDienChonDiaChi extends StatefulWidget {
 }
 
 class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
+  // Khai báo đối tượng Firebase Authentication và các biến cần thiết
   Firebauth _firebauth = Firebauth();
-  int? selected;
-  List<Map<String, dynamic>> listRadio = [];
-  List<Map<String, dynamic>> items = [];
+  int? selected; // Biến lưu trữ địa chỉ đã chọn
+  List<Map<String, dynamic>> listRadio =[]; // Danh sách các địa chỉ dưới dạng danh sách radio
+  List<Map<String, dynamic>> items = []; // Danh sách địa chỉ từ cơ sở dữ liệu
 
-  //set value radio
+  // Hàm thiết lập giá trị radio khi người dùng chọn địa chỉ
   SetValueRadio(int value) async {
-     String  idItem = value.toString();
+    String idItem = value.toString(); // Chuyển giá trị chọn thành chuỗi
     setState(() {
-      selected = value;
+      selected = value; // Cập nhật giá trị đã chọn
     });
-     _firebauth.UpdateSelectedAddress(widget.email.toString(), idItem);
-     await Future.delayed(Duration(milliseconds: 200), () {
-        Navigator.pop(context, true);
-     });
+
+    // Cập nhật địa chỉ đã chọn trên cơ sở dữ liệu Firebase
+    _firebauth.UpdateSelectedAddress(widget.email.toString(), idItem);
+
+    // Đợi một chút rồi đóng trang hiện tại
+    await Future.delayed(Duration(milliseconds: 200), () {
+      Navigator.pop(context, true); // Trở lại trang trước với giá trị true
+    });
   }
 
-  //Selected
-  void SetSelected(int index){
-
+  // Hàm set selected, có thể sẽ dùng để xử lý các thao tác khác khi chọn
+  void SetSelected(int index) {
+    // Chưa có logic cụ thể, có thể sử dụng sau này
   }
 
-  //lấy dữ liệu address từ database
+  // Lấy dữ liệu từ cơ sở dữ liệu Firestore và cập nhật danh sách địa chỉ
   void LayDuLieu() async {
-    items = await _firebauth.GetAddress2(widget.email.toString());
-    for(int i = 0; i < items.length; i++){
-      listRadio.addAll([{
-        "value$i" : int.tryParse(items[i]['id'])
-      }]);
+    items = await _firebauth.GetAddress2(
+      widget.email.toString(),
+    ); // Lấy danh sách địa chỉ từ Firebase
+    for (int i = 0; i < items.length; i++) {
+      // Thêm các địa chỉ vào listRadio, dùng để liên kết với các nút radio
+      listRadio.addAll([
+        {"value$i": int.tryParse(items[i]['id'])},
+      ]);
 
-      if(items[i]['select'] == true){
+      // Kiểm tra nếu địa chỉ này đã được chọn trước, cập nhật biến selected
+      if (items[i]['select'] == true) {
         selected = int.tryParse(items[i]['id']);
       }
     }
-    
-   if(mounted){
-     setState(() {});
-   }
+
+    // Kiểm tra xem widget có còn được render không, nếu có thì setState để cập nhật UI
+    if (mounted) {
+      setState(() {});
+    }
   }
 
+  // Hàm khởi tạo, gọi khi widget được tạo
   @override
   void initState() {
     super.initState();
-   
-    LayDuLieu();
+    LayDuLieu(); // Gọi hàm lấy dữ liệu từ Firebase khi widget được khởi tạo
   }
 
+  // Hàm build để xây dựng giao diện của widget
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        automaticallyImplyLeading:
+            false, // Tắt nút quay lại mặc định của AppBar
+        backgroundColor: Colors.white, // Màu nền của AppBar
         actions: [
+          // Nút quay lại, khi nhấn sẽ quay lại trang trước
           Expanded(
             flex: 15,
             child: Padding(
               padding: const EdgeInsets.only(left: 15, right: 5),
               child: IconButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Quay lại trang trước
                 },
                 icon: Icon(Icons.arrow_back_ios, color: Colors.black),
               ),
             ),
           ),
+          // Tiêu đề "Chọn địa chỉ nhận hàng"
           Expanded(
             flex: 70,
             child: Padding(
@@ -91,6 +105,7 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
               ),
             ),
           ),
+          // Nút tìm kiếm (chưa sử dụng trong trường hợp này)
           Expanded(
             flex: 15,
             child: Padding(
@@ -103,10 +118,12 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
           ),
         ],
       ),
-      backgroundColor: Colors.grey[300],
+      backgroundColor: Colors.grey[300], // Màu nền của Scaffold
       body: SingleChildScrollView(
+        // Dùng SingleChildScrollView để cuộn toàn bộ nội dung nếu cần
         child: Column(
           children: [
+            // Tiêu đề phần "Địa chỉ"
             Align(
               alignment: Alignment.centerLeft,
               child: Padding(
@@ -121,40 +138,50 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
               ),
             ),
 
+            // Danh sách các địa chỉ được render bằng ListView.builder
             ListView.builder(
               shrinkWrap:
-                  true, // Để nó chỉ chiếm chỗ cần thiết nếu nằm trong Column
+                  true, // Làm cho ListView chỉ chiếm không gian cần thiết trong Column
               physics:
-                  NeverScrollableScrollPhysics(), // Nếu muốn scroll toàn trang, ko scroll riêng list
-              itemCount: items.length,
+                  NeverScrollableScrollPhysics(), // Tắt scroll của ListView, để chỉ cuộn trang chính
+              itemCount: items.length, // Số lượng phần tử trong danh sách
               itemBuilder: (context, i) {
+                // Dùng Padding để tạo khoảng cách giữa các item
                 return Padding(
                   padding: EdgeInsets.only(left: 0, right: 0, bottom: 1),
                   child: Container(
                     padding: EdgeInsets.all(10),
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.white, // Màu nền của mỗi phần tử
                       borderRadius: BorderRadius.circular(0),
                       boxShadow: [
-                        BoxShadow(blurRadius: 100, color: Colors.grey),
+                        BoxShadow(
+                          blurRadius: 100,
+                          color: Colors.grey,
+                        ), // Đổ bóng cho phần tử
                       ],
                     ),
                     child: Row(
                       children: [
+                        // Phần radio button để chọn địa chỉ
                         Expanded(
                           flex: 1,
                           child: Align(
                             alignment: Alignment.topCenter,
                             child: Radio(
-                              value: listRadio[i]['value$i'],
-                              groupValue: selected,
+                              value:
+                                  listRadio[i]['value$i'], // Giá trị của radio button
+                              groupValue: selected, // Giá trị được chọn
                               onChanged: (value) {
-                                SetValueRadio(value!);
+                                SetValueRadio(
+                                  value!,
+                                ); // Gọi hàm khi chọn radio button
                               },
                             ),
                           ),
                         ),
+                        // Phần thông tin địa chỉ (Tên, điện thoại, địa chỉ)
                         Expanded(
                           flex: 9,
                           child: Padding(
@@ -164,6 +191,7 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
                               children: [
                                 Row(
                                   children: [
+                                    // Hiển thị tên người nhận
                                     items.isNotEmpty
                                         ? Text(
                                           '${items[i]['name']}',
@@ -181,6 +209,8 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
                                         ),
 
                                     SizedBox(width: 10),
+
+                                    // Hiển thị số điện thoại
                                     items.isNotEmpty
                                         ? Text(
                                           '${items[i]['telephone']}',
@@ -199,6 +229,7 @@ class _GiaoDienChonDiaChiState extends State<GiaoDienChonDiaChi> {
                                         ),
                                   ],
                                 ),
+                                // Hiển thị địa chỉ người nhận
                                 items.isNotEmpty
                                     ? Text(
                                       '${items[i]['address']}',

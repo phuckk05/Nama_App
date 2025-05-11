@@ -35,6 +35,9 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     doDaNhanDuocHang();
+    if (mounted) setState(() {});
+
+    print(widget.listDonHang!.length);
   }
 
   //lay thong tin thanh toan
@@ -42,9 +45,11 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
     // Tìm đơn hàng có id tương ứng trong listDonHangDaGiao
     DonHang donHang = listDonHangDaGiao.firstWhere(
       (item) => item.id == id,
+      // ignore: cast_from_null_always_fails
       orElse: () => null as DonHang,
     );
 
+    // ignore: unnecessary_null_comparison
     if (donHang != null) {
       // Cập nhật trạng thái của đơn hàng
       donHang.status = "Đã nhận hàng";
@@ -110,7 +115,6 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
   @override
   void dispose() {
     _tabController.dispose();
-
     super.dispose();
   }
 
@@ -118,94 +122,93 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      child: 
-    Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
-        actions: [
-          Expanded(
-            flex: 15,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 15, right: 5),
-              child: IconButton(
-                onPressed: () {
-                  Navigator.pop(context, true);
-                },
-                icon: Icon(Icons.arrow_back_ios, color: Colors.black),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 70,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 10, bottom: 10),
-              child: Text(
-                'Đơn hàng của bạn',
-                style: GoogleFonts.robotoSlab(
-                  fontSize: AppStyle.textSizeTitle,
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          actions: [
+            Expanded(
+              flex: 15,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 15, right: 5),
+                child: IconButton(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                  icon: Icon(Icons.arrow_back_ios, color: Colors.black),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 15,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
+            Expanded(
+              flex: 70,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 10),
                 child: Text(
-                  'Lưu',
-                  style: TextStyle(
-                    fontSize: AppStyle.textSizeMedium,
-                    color: Colors.white,
+                  'Đơn hàng của bạn',
+                  style: GoogleFonts.robotoSlab(
+                    fontSize: AppStyle.textSizeTitle,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.grey[300],
-      body: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.black54,
-              indicatorColor: Colors.black,
-              labelStyle: TextStyle(
-                fontSize: AppStyle.textSizeMedium,
-                fontWeight: FontWeight.bold,
+            Expanded(
+              flex: 15,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'Lưu',
+                    style: TextStyle(
+                      fontSize: AppStyle.textSizeMedium,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
-              tabs: [
-                Tab(text: 'Xác nhận'),
-                Tab(text: 'Chờ giao hàng'),
-                Tab(text: 'Đã giao'),
-                Tab(text: 'Đánh giá'),
-              ],
             ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                giaoDienChoXacNhan(),
-                giaoDienChoGiao(),
-                giaoDienDaGiao(),
-                giaoDaNhanHang(),
-              ],
+          ],
+        ),
+        backgroundColor: Colors.grey[300],
+        body: Column(
+          children: [
+            Container(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.black54,
+                indicatorColor: Colors.black,
+                labelStyle: TextStyle(
+                  fontSize: AppStyle.textSizeMedium,
+                  fontWeight: FontWeight.bold,
+                ),
+                tabs: [
+                  Tab(text: 'Xác nhận'),
+                  Tab(text: 'Chờ giao hàng'),
+                  Tab(text: 'Đã giao'),
+                  Tab(text: 'Đánh giá'),
+                ],
+              ),
             ),
-          ),
-        ],
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  giaoDienChoXacNhan(),
+                  giaoDienChoGiao(),
+                  giaoDienDaGiao(),
+                  giaoDaNhanHang(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -234,7 +237,17 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                         itemBuilder: (context, index) {
                           return InkWell(
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoXacNhan[index],i: 0,)));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => GiaoDienChiTietDonHang(
+                                        email: widget.email,
+                                        items: listChoXacNhan[index],
+                                        i: 0,
+                                      ),
+                                ),
+                              );
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -528,8 +541,18 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                         itemCount: listChoGiao.length,
                         itemBuilder: (context, index) {
                           return InkWell(
-                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listChoGiao[index],i: 1,)));
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => GiaoDienChiTietDonHang(
+                                        email: widget.email,
+                                        items: listChoGiao[index],
+                                        i: 1,
+                                      ),
+                                ),
+                              );
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -822,7 +845,17 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                         itemBuilder: (context, index) {
                           return InkWell(
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listDonHangDaGiao[index], i: 2,)));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => GiaoDienChiTietDonHang(
+                                        email: widget.email,
+                                        items: listDonHangDaGiao[index],
+                                        i: 2,
+                                      ),
+                                ),
+                              );
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -1032,17 +1065,16 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                           ),
                                           InkWell(
                                             onTap: () {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return ThongBaoDaNhanDuocHang(
-                                                      context,
-                                                      listDonHangDaGiao[index]
-                                                          .id,
-                                                    );
-                                                  },
-                                                );
-                                              },
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) {
+                                                  return ThongBaoDaNhanDuocHang(
+                                                    context,
+                                                    listDonHangDaGiao[index].id,
+                                                  );
+                                                },
+                                              );
+                                            },
                                             child: Container(
                                               padding: EdgeInsets.all(10),
                                               decoration: BoxDecoration(
@@ -1127,7 +1159,17 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                         itemBuilder: (context, index) {
                           return InkWell(
                             onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => GiaoDienChiTietDonHang(email: widget.email, items:listDanhGia[index], i: 3,)));
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (context) => GiaoDienChiTietDonHang(
+                                        email: widget.email,
+                                        items: listDanhGia[index],
+                                        i: 3,
+                                      ),
+                                ),
+                              );
                             },
                             child: Padding(
                               padding: const EdgeInsets.only(bottom: 10),
@@ -1394,10 +1436,7 @@ class _GiaoDienDonHangState extends State<GiaoDienDonHang>
                                                                 index: index,
                                                                 email:
                                                                     widget.email
-                                                                      .toString(),
-                                                                
-                                                           
-
+                                                                        .toString(),
                                                               ),
                                                         ),
                                                       );

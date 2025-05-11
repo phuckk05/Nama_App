@@ -1,4 +1,6 @@
+//Model giỏ hàng
 class CartItem {
+  //properties
   String idCart;
   String idProduct;
   String name;
@@ -12,6 +14,7 @@ class CartItem {
   String createdAt;
   String emailAdd;
 
+  //Constructor
   CartItem({
     required this.idCart,
     required this.idProduct,

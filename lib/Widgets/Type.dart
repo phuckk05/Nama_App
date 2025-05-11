@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nama_app/Style_App/StyleApp.dart';
 class Type extends StatefulWidget {
   final String name;
   final String image;

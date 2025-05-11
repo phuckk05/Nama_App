@@ -1,4 +1,7 @@
+//Model Sản phẩm
 class Product {
+
+  //Properties
   String id;
   String name;
   String description;
@@ -11,7 +14,7 @@ class Product {
   String createdAt;
   bool hiden;
   
-
+  //Constructor
   Product({
     required this.id,
     required this.name,

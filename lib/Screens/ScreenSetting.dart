@@ -3,23 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 
 class GiaoDienCaiDat extends StatefulWidget {
-  const GiaoDienCaiDat({super.key});
+  final String? email;
+  const GiaoDienCaiDat({super.key, this.email});
 
   @override
   State<GiaoDienCaiDat> createState() => _GiaoDienCaiDatState();
 }
 
 class _GiaoDienCaiDatState extends State<GiaoDienCaiDat> {
-  final List<_SettingSection> sections = [
-    _SettingSection(
-      title: 'Cài đặt tài khoản',
-      item: ['Thông tin và liên hệ', 'Liên Hệ '],
-    ),
-    _SettingSection(
-      title: 'Settings Applications',
-      item: ['Điều khoản dịch vụ', 'Liên hệ & Góp ý'],
-    ),
-  ];
+  
 
   @override
   Widget build(BuildContext context) {
@@ -67,106 +59,50 @@ class _GiaoDienCaiDatState extends State<GiaoDienCaiDat> {
         ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Container(
-                  width: double.infinity,
-                  height: 10,
-                  color: Colors.grey[500],
-                ),
           Padding(
-            padding: EdgeInsets.all(20),
-            child: ListView.builder(
-              shrinkWrap:
-                          true, 
-                      physics: NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 10),
+            child: Text('Cài đặt tài khoản', style: TextStyle(fontWeight: FontWeight.bold, fontSize: AppStyle.textSizeMedium),),
+          ),
+          Column(
+            children: [
+              SizedBox(height: 10,),
+              Divider(height: 1,),
+             Container(
+              padding: EdgeInsets.only(left: 30, right: 20, top: 0,bottom: 0),
+              child:  _buildListile("Đổi tài khoản email"),
+             ),
+             Divider(height: 1,),
+             Container(
+              padding: EdgeInsets.only(left: 30, right: 20, top: 0),
+              child:  _buildListile("Xóa tải khoản"),
+             ),
+             Divider(height: 1,),
 
-              itemCount: sections.length,
-              itemBuilder: (context, index) {
-                final section = sections[index];
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Section title
-                   
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Text(
-                        section.title,
-                        style: TextStyle(
-                          color: Colors.amber,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-          
-                    // List item trong section
-                    ...section.item.map(
-                      (itemTitle) => _buildSettingItem(
-                        title: itemTitle,
-                        icon: Icons.settings,
-                        onTap: () {
-                          if (itemTitle == 'Liên hệ & Góp ý') {
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => FeedbackScreen(),
-                            //   ),
-                            // );
-                          } else if (itemTitle == 'Điều khoản dịch vụ') {
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => TermsOfServiceScreen(),
-                            //   ),
-                            // );
-                          } else if (itemTitle == 'Thông tin và liên hệ') {
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => UserInfoScreen(),
-                            //   ),
-                            // );
-                            
-                          }
-                          else if( itemTitle.trim() == 'Liên Hệ ' ){
-                            //   Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => InfoContactScreen(),
-                            //   ),
-                            // );
-                          }
-                          // Thêm điều hướng khác nếu cần
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+            ],
+          ),
+           Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 10),
+            child: Text('Phản hồi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: AppStyle.textSizeMedium),),
+          ),
+           Padding(
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 10),
+            child: Text('Version 1.0.0', style: TextStyle(fontWeight: FontWeight.bold, fontSize: AppStyle.textSizeMedium, color: Colors.black54),),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildSettingItem({
-    required String title,
-    required IconData icon,
-    VoidCallback? onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.teal),
-      title: Text(title),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: onTap,
+  Widget _buildListile(String title){
+    return InkWell(
+      onTap: (){
+        print('hello w');
+      },
+      child: ListTile(
+        title:Text('$title'),
+        trailing: Icon(Icons.arrow_forward_ios),
+      ),
     );
   }
-}
-
-class _SettingSection {
-  final String title;
-  final List<String> item;
-  _SettingSection({required this.title, required this.item});
 }

@@ -16,21 +16,26 @@ class GiaoDienDanhGia extends StatefulWidget {
 }
 
 class _GiaoDienDanhGiaState extends State<GiaoDienDanhGia> {
+  // Khởi tạo đối tượng Firebauth, biến lưu trữ đánh giá sao, lựa chọn đánh giá và bộ điều khiển cho TextField
   Firebauth _firebauth = Firebauth();
-  int selectedStar = 0;
-  String selectedOption = 'Tốt';
-  final feedbackController = TextEditingController();
+  int selectedStar = 0; // Biến lưu trữ số sao đã chọn
+  String selectedOption =
+      'Tốt'; // Biến lưu trữ lựa chọn đánh giá (ví dụ: 'Tốt', 'Khá', 'Xấu')
+  final feedbackController =
+      TextEditingController(); // Bộ điều khiển cho trường nhập liệu đánh giá
 
-
+  // Khai báo các màu sắc cho các sao
   Color colorGrey1 = Colors.grey;
   Color colorGrey2 = Colors.grey;
   Color colorGrey3 = Colors.grey;
   Color colorGrey4 = Colors.grey;
   Color colorGrey5 = Colors.grey;
 
+  // Hàm SetColor để thay đổi màu sắc của các sao dựa trên chỉ số sao đã chọn
   void SetColor(int index) {
     setState(() {
-      selectedStar = index;
+      selectedStar = index; // Cập nhật số sao đã chọn
+      // Cập nhật màu sắc của các sao (từ màu xám đến màu vàng khi sao được chọn)
       colorGrey1 = index >= 1 ? Colors.amberAccent : Colors.grey;
       colorGrey2 = index >= 2 ? Colors.amberAccent : Colors.grey;
       colorGrey3 = index >= 3 ? Colors.amberAccent : Colors.grey;
@@ -39,18 +44,33 @@ class _GiaoDienDanhGiaState extends State<GiaoDienDanhGia> {
     });
   }
 
-  void saveReview(Review review) async{
-    if(selectedOption.isNotEmpty && feedbackController.text.isNotEmpty && selectedStar != 0){
-      _firebauth.SaveReview(review);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Center(child: Text('Lưu đánh giá thành công')))
-    );
-    await _firebauth.updateDonHangdaDuocDanhGia(widget.listDanhGia![widget.index!].id);
-    Navigator.pop(context, true);
-    }else{
-        ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Center(child: Text('Vui lòng nhập đánh giá')))
-    );
+  // Hàm lưu đánh giá, kiểm tra điều kiện và gọi hàm lưu vào Firestore
+  void saveReview(Review review) async {
+    if (selectedOption.isNotEmpty &&
+        feedbackController.text.isNotEmpty &&
+        selectedStar != 0) {
+      // Kiểm tra nếu tất cả các trường đều được điền đầy đủ: lựa chọn, đánh giá và số sao
+      _firebauth.SaveReview(
+        review,
+      ); // Lưu đánh giá vào Firestore (hoặc cơ sở dữ liệu tương ứng)
+
+      // Hiển thị thông báo thành công khi lưu đánh giá thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Center(child: Text('Lưu đánh giá thành công'))),
+      );
+
+      // Cập nhật trạng thái của đơn hàng đã được đánh giá
+      await _firebauth.updateDonHangdaDuocDanhGia(
+        widget.listDanhGia![widget.index!].id,
+      );
+
+      // Đóng màn hình đánh giá và trả về giá trị true để cập nhật trạng thái bên ngoài
+      Navigator.pop(context, true);
+    } else {
+      // Nếu các trường chưa được điền đầy đủ, hiển thị thông báo lỗi
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Center(child: Text('Vui lòng nhập đánh giá'))),
+      );
     }
   }
 
@@ -75,53 +95,70 @@ class _GiaoDienDanhGiaState extends State<GiaoDienDanhGia> {
         ),
       ),
       body: SingleChildScrollView(
+        // Để cho phép cuộn màn hình khi nội dung vượt quá không gian hiển thị
         child: Column(
           children: [
-            Container(
-              width: double.infinity,
-              height: 10, 
-              color: Colors.grey,
-            ),
+            // Một thanh ngang màu xám ngăn cách các phần
+            Container(width: double.infinity, height: 10, color: Colors.grey),
+
             Padding(
-              padding: EdgeInsets.only(left: 20, right: 20, top: 10),
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 10,
+              ), // Padding cho các phần tử con
               child: Column(
-                
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start, // Căn lề trái cho các phần tử con
                 children: [
-                  
                   // Tên sản phẩm
                   Row(
                     children: [
                       Text(
-                        'Tên sản phẩm : ',
-                        style: TextStyle(color: Colors.black54, fontSize: AppStyle.textSizeMedium),
-                      ),
-                                 
-                     Expanded(child:  Text(
-                      maxLines: 1, 
-                      overflow: TextOverflow.ellipsis,
-                        widget.listDanhGia![widget.index!].name,
+                        'Tên sản phẩm : ', // Text hiển thị nhãn "Tên sản phẩm"
                         style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.black54,
                           fontSize: AppStyle.textSizeMedium,
                         ),
-                      ),)
+                      ),
+                      Expanded(
+                        child: Text(
+                          maxLines: 1, // Giới hạn một dòng để tránh tràn chữ
+                          overflow:
+                              TextOverflow
+                                  .ellipsis, // Nếu tên quá dài, sẽ hiển thị "..."
+                          widget
+                              .listDanhGia![widget.index!]
+                              .name, // Tên sản phẩm lấy từ danh sách đánh giá
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: AppStyle.textSizeMedium,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 20),
-              
+                  SizedBox(height: 20), // Khoảng cách giữa các phần tử
                   // Đánh giá sao
                   Text(
                     'Bạn đánh giá sản phẩm này mấy sao?',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: AppStyle.textSizeMedium),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: AppStyle.textSizeMedium,
+                    ),
                   ),
                   SizedBox(height: 10),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Căn giữa các sao
                     children: [
+                      // Các icon sao cho phép người dùng đánh giá sản phẩm từ 1 đến 5 sao
                       IconButton(
-                        onPressed: () => SetColor(1),
+                        onPressed:
+                            () => SetColor(
+                              1,
+                            ), // Hàm SetColor được gọi khi người dùng chọn sao
                         icon: Icon(Icons.star, size: 32, color: colorGrey1),
                       ),
                       IconButton(
@@ -142,73 +179,110 @@ class _GiaoDienDanhGiaState extends State<GiaoDienDanhGia> {
                       ),
                     ],
                   ),
-                  SizedBox(height: 20),
-              
-                  // Dropdown đánh giá
+                  SizedBox(height: 20), // Khoảng cách giữa các phần tử
+                  // Dropdown cho loại đánh giá (Tốt, Trung bình, Tệ)
                   Text(
                     'Loại đánh giá:',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: selectedOption,
+                    value: selectedOption, // Lựa chọn mặc định của Dropdown
                     decoration: InputDecoration(
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
                     ),
-                    items: [
-                      'Tốt',
-                      'Trung bình',
-                      'Tệ',
-                    ].map((label) => DropdownMenuItem(
-                      child: Text(label),
-                      value: label,
-                    )).toList(),
+                    items:
+                        ['Tốt', 'Trung bình', 'Tệ']
+                            .map(
+                              (label) => DropdownMenuItem(
+                                child: Text(label),
+                                value: label,
+                              ),
+                            )
+                            .toList(),
                     onChanged: (value) {
                       setState(() {
-                        selectedOption = value!;
+                        selectedOption =
+                            value!; // Cập nhật lựa chọn khi người dùng thay đổi
                       });
                     },
                   ),
-                  SizedBox(height: 20),
-              
-                  // Ô nhập phản hồi
+                  SizedBox(height: 20), // Khoảng cách giữa các phần tử
+                  // Ô nhập phản hồi của người dùng
                   Text(
                     'Phản hồi của bạn:',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   TextField(
-                    controller: feedbackController,
-                    maxLines: 5,
+                    controller:
+                        feedbackController, // Gắn bộ điều khiển cho TextField
+                    maxLines: 5, // Giới hạn số dòng của TextField
                     decoration: InputDecoration(
                       hintText: 'Nhập nội dung phản hồi...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       fillColor: Colors.white,
                       filled: true,
                     ),
                   ),
-                  SizedBox(height: 30),
-              
+                  SizedBox(height: 30), // Khoảng cách giữa các phần tử
                   // Nút Lưu đánh giá
                   Center(
                     child: ElevatedButton.icon(
-                      
-                      onPressed: (){
-                        String id = _firebauth.generateVerificationCode(5);
-                        Review review = Review(id: id, email: widget.email.toString(), idProducts: widget.listDanhGia![widget.index!].idProducts,idOrder:widget.listDanhGia![widget.index!].id  , start: selectedStar,slelect: selectedOption.toString(),   review: feedbackController.text.toString(),nameBuy: "hello");
-                        saveReview(review);
+                      onPressed: () {
+                        String id = _firebauth.generateVerificationCode(
+                          5,
+                        ); // Tạo mã xác thực ngẫu nhiên
+                        Review review = Review(
+                          id: id,
+                          email:
+                              widget.email
+                                  .toString(), // Email của người đánh giá
+                          idProducts:
+                              widget
+                                  .listDanhGia![widget.index!]
+                                  .idProducts, // ID sản phẩm
+                          idOrder:
+                              widget
+                                  .listDanhGia![widget.index!]
+                                  .id, // ID đơn hàng
+                          start: selectedStar, // Số sao người dùng chọn
+                          slelect: selectedOption.toString(), // Loại đánh giá
+                          review:
+                              feedbackController.text
+                                  .toString(), // Phản hồi của người dùng
+                          nameBuy:
+                              "hello", // Tên người mua (hoặc tên giả định ở đây)
+                        );
+                        saveReview(review); // Gọi hàm để lưu đánh giá
                       },
-                      icon: Icon(Icons.save),
-                      label: Text('Lưu đánh giá', style: TextStyle(
-                        fontWeight: FontWeight.bold
-                      ),),
+                      icon: Icon(Icons.save), // Biểu tượng lưu
+                      label: Text(
+                        'Lưu đánh giá',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50),
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        minimumSize: Size(
+                          double.infinity,
+                          50,
+                        ), // Chiều rộng nút đầy màn hình
+                        backgroundColor: Colors.green, // Màu nền nút
+                        foregroundColor: Colors.white, // Màu chữ nút
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),

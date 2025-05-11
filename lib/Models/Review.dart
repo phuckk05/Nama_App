@@ -1,4 +1,6 @@
+//Model Đánh giá
 class Review {
+  //Properties
   final String id;
   final String email;
   final String idProducts;
@@ -7,7 +9,8 @@ class Review {
   final String slelect;
   final String review;
   final String nameBuy;
-
+  
+  //Constructor
   Review({
     required this.id,
     required this.email,

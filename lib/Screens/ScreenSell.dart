@@ -1,14 +1,16 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:marquee_widget/marquee_widget.dart';
 import 'package:nama_app/API/imageAPI.dart';
 import 'package:nama_app/DataBase/FireBAuth.dart';
 import 'package:nama_app/Models/Order.dart';
 import 'package:nama_app/Models/Products.dart';
-import 'package:nama_app/Pemisstion/PermissionHandler.dart';
+// import 'package:nama_app/Pemisstion/PermissionHandler.dart';
 import 'package:nama_app/Screens/ScreenProcessScreen.dart';
 import 'package:nama_app/Style_App/StyleApp.dart';
 import 'package:image_picker/image_picker.dart';
@@ -25,7 +27,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     with SingleTickerProviderStateMixin {
   Cloudinary _imageAPI = Cloudinary();
   late TabController _tabController;
-  PermisstionHandler _permission = PermisstionHandler();
+  // PermisstionHandler _permission = PermisstionHandler();
   File? _image;
   bool load = true;
   bool isloading2 = false;
@@ -73,6 +75,8 @@ class _GiaoDienBanState extends State<GiaoDienBan>
   List<Map<String, dynamic>> ListChinhSua = [];
   List<Map<String, TextEditingController>> ListControler = [];
   bool offStateCon = true;
+
+  /// Hàm chọn ảnh từ thư viện.
   Future<void> pickImageFromGallery() async {
     // bool control = await _permission.requestGalleryPermission();
     // if (control) {
@@ -96,6 +100,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     // }
   }
 
+  /// Hàm đăng bán sản phẩm.
   Future<void> DangBan() async {
     if (name.text.isEmpty ||
         price.text.isEmpty ||
@@ -184,12 +189,15 @@ class _GiaoDienBanState extends State<GiaoDienBan>
   }
 
   bool _offState = true;
+
+  /// Hàm cập nhật trạng thái "offState" khi chọn ảnh.
   void SetOffState() {
     setState(() {
       _offState = false;
     });
   }
 
+  /// Hàm reset trạng thái "offState" khi không chọn ảnh.
   void SetOffStateIconClose() {
     setState(() {
       _offState = true;
@@ -197,12 +205,14 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     });
   }
 
+  /// Hàm chọn danh mục sản phẩm.
   void Choose(String value) {
     setState(() {
       selectedCategory = value;
     });
   }
 
+  /// Hàm lấy danh sách sản phẩm từ Firestore.
   void fetchProducts() async {
     List<Product> items = [];
     items = await _au.getAllProductsUser(widget.email.toString());
@@ -215,17 +225,20 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     }
   }
 
+  /// Hàm thay đổi icon lọc.
   Icon get iconLoc =>
       isFilterOn
           ? Icon(Icons.filter_alt, size: 25)
           : Icon(Icons.filter_alt_off, size: 25);
 
+  /// Hàm chuyển đổi trạng thái của icon lọc.
   void ChangeIcon() {
     setState(() {
       isFilterOn = !isFilterOn;
     });
   }
 
+  /// Hàm thay đổi kích thước container.
   void SetContenaer() {
     setState(() {
       rong = rong == 150 ? double.infinity : 150;
@@ -234,6 +247,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     });
   }
 
+  /// Hàm thiết lập chiều cao của sản phẩm.
   void SetChieuCao() {
     listChieuCao.clear();
     ListChinhSua.clear();
@@ -280,7 +294,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     }
   }
 
-  //hầm số luuwojgn sản phẩm đã bán
+  /// Hàm lấy số lượng sản phẩm từ Firebase.
   void LaySoLuong() async {
     String? result = await _au.GetCountProducts(widget.email.toString());
 
@@ -301,19 +315,25 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     }
   }
 
+  /// Hàm khởi tạo TabController và tải sản phẩm khi trang được khởi động.
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    fetchProducts();
-    LaySoLuong();
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+    ); // Khởi tạo TabController.
+    fetchProducts(); // Tải sản phẩm của người dùng.
+    LaySoLuong(); // Lấy số lượng sản phẩm đã bán và tổng số lượng.
   }
 
+  /// Hàm gọi khi giao diện thay đổi.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
   }
 
+  /// Hàm gọi khi widget bị huỷ.
   @override
   void dispose() {
     super.dispose();
@@ -322,6 +342,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
@@ -796,7 +817,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
   bool _offStateImage2 = false;
   //tab 2
   Widget _DanhSachSanPham() {
-    Timer(Duration(seconds: 2), () {
+    Timer(Duration(seconds: 4), () {
       isloading2 = true;
       if (mounted) {
         setState(() {});
@@ -804,6 +825,7 @@ class _GiaoDienBanState extends State<GiaoDienBan>
     });
     return isloading2
         ? SingleChildScrollView(
+          
           child: Column(
             children: [
               Padding(
@@ -1858,84 +1880,146 @@ class _GiaoDienBanState extends State<GiaoDienBan>
             ],
           ),
         )
-        : Container(
-          color: Colors.black54.withOpacity(0.1),
-          child: Center(child: CircularProgressIndicator()),
+        : Center(
+          child: Container(
+            width: double.infinity,
+            height: 60,
+            child: Align(
+              alignment: Alignment.center,
+              child: Marquee(
+                direction: Axis.horizontal,
+                animationDuration: Duration(
+                  milliseconds: 2000,
+                ), // tốc độ vừa phải
+                backDuration: Duration(milliseconds: 20),
+                pauseDuration: Duration(seconds: 0),
+                child: Row(
+                  children: [
+                    SizedBox(width: 450),
+                    Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.rotationY(pi), // Lật theo trục Y
+                      child: Icon(
+                        Icons.local_shipping,
+                        color: Colors.green,
+                        size: 40,
+                      ),
+                    ),
+                    Text(
+                      '........................................................................................',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                    // SizedBox(width: 100),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
   }
 
-  //phần đã bán
+  // Phần hiển thị sản phẩm đã bán
   Widget _daBan() {
-    return itemDonHang.isNotEmpty
+    return itemDonHang
+            .isNotEmpty // Kiểm tra nếu danh sách đơn hàng không rỗng
         ? Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(
+            10.0,
+          ), // Thêm khoảng cách xung quanh container
           child: Container(
             constraints: BoxConstraints(
-              minWidth: double.infinity,
+              minWidth:
+                  double
+                      .infinity, // Chiều rộng tối thiểu là vô hạn (chiếm toàn bộ chiều rộng)
               minHeight: 0,
-              maxHeight: 480,
+              maxHeight: 480, // Chiều cao tối đa của container là 480
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [BoxShadow(blurRadius: 10)],
-              borderRadius: BorderRadius.circular(5),
+              color: Colors.white, // Màu nền là trắng
+              boxShadow: [
+                BoxShadow(blurRadius: 10),
+              ], // Đổ bóng mờ cho container
+              borderRadius: BorderRadius.circular(
+                5,
+              ), // Bo tròn góc của container
             ),
             child: ListView.builder(
-              itemCount: itemDonHang.length,
-              physics: AlwaysScrollableScrollPhysics(),
-              shrinkWrap: true,
+              itemCount:
+                  itemDonHang.length, // Số lượng item trong danh sách đơn hàng
+              physics:
+                  AlwaysScrollableScrollPhysics(), // Cho phép cuộn liên tục dù không còn nội dung
+              shrinkWrap:
+                  true, // Cho phép thu gọn chiều cao của ListView cho phù hợp với nội dung
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.only(right: 10, left: 10, top: 10),
+                  padding: const EdgeInsets.only(
+                    right: 10,
+                    left: 10,
+                    top: 10,
+                  ), // Khoảng cách giữa các phần tử
                   child: Column(
                     children: [
+                      // Tên sản phẩm
                       Row(
                         children: [
                           Text(
-                            'Tên sản phẩm : ',
+                            'Tên sản phẩm : ', // Ghi chú "Tên sản phẩm"
                             style: TextStyle(fontSize: 13),
                           ),
                           Expanded(
                             child: Text(
-                              '${itemDonHang[index].name}',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              '${itemDonHang[index].name}', // Hiển thị tên sản phẩm
+                              maxLines: 2, // Giới hạn số dòng tối đa là 2
+                              overflow:
+                                  TextOverflow
+                                      .ellipsis, // Dùng dấu "..." khi nội dung dài
                               style: TextStyle(
-                                fontSize: AppStyle.textSizeMedium,
-                                fontWeight: FontWeight.bold,
+                                fontSize:
+                                    AppStyle
+                                        .textSizeMedium, // Kích thước chữ vừa
+                                fontWeight: FontWeight.bold, // Chữ đậm
                               ),
                             ),
                           ),
                         ],
                       ),
-
+                      // Số lượng sản phẩm
                       Row(
                         children: [
-                          Text('Số lượng : ', style: TextStyle(fontSize: 13)),
                           Text(
-                            '${itemDonHang[index].soLuong}',
+                            'Số lượng : ',
+                            style: TextStyle(fontSize: 13),
+                          ), // Ghi chú "Số lượng"
+                          Text(
+                            '${itemDonHang[index].soLuong}', // Hiển thị số lượng sản phẩm
                             style: TextStyle(
-                              fontSize: AppStyle.textSizeMedium,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black54,
+                              fontSize:
+                                  AppStyle.textSizeMedium, // Kích thước chữ vừa
+                              fontWeight: FontWeight.bold, // Chữ đậm
+                              color: Colors.black54, // Màu chữ xám nhẹ
                             ),
                           ),
                         ],
                       ),
+                      // Giá sản phẩm
                       Row(
                         children: [
-                          Text('Giá : ', style: TextStyle(fontSize: 13)),
                           Text(
-                            '${itemDonHang[index].price} đ',
+                            'Giá : ',
+                            style: TextStyle(fontSize: 13),
+                          ), // Ghi chú "Giá"
+                          Text(
+                            '${itemDonHang[index].price} đ', // Hiển thị giá sản phẩm với đơn vị "đ"
                             style: TextStyle(
-                              fontSize: AppStyle.textSizeMedium,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
+                              fontSize:
+                                  AppStyle.textSizeMedium, // Kích thước chữ vừa
+                              fontWeight: FontWeight.bold, // Chữ đậm
+                              color: Colors.red, // Màu chữ đỏ cho giá
                             ),
                           ),
                         ],
                       ),
-                      Divider(),
+                      Divider(), // Chèn một dòng phân cách giữa các sản phẩm
                     ],
                   ),
                 );
@@ -1944,61 +2028,82 @@ class _GiaoDienBanState extends State<GiaoDienBan>
           ),
         )
         : Container(
-          width: double.infinity,
-          height: 100,
+          width: double.infinity, // Chiếm toàn bộ chiều rộng
+          height: 100, // Chiều cao cố định 100
           child: Center(
             child: Text(
-              'Không có dữ liệu',
-              style: TextStyle(color: Colors.black54),
+              'Không có dữ liệu', // Hiển thị thông báo khi không có sản phẩm
+              style: TextStyle(color: Colors.black54), // Màu chữ xám nhẹ
             ),
           ),
         );
   }
 
-  //Thông báo xóa sản phẩm
+  // Thông báo xóa sản phẩm - Dialog để xác nhận xóa sản phẩm
   Widget ThongBao(BuildContext context, String id, int index) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ), // Định dạng góc bo tròn cho dialog
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(
+          20,
+        ), // Padding xung quanh nội dung của dialog
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize:
+              MainAxisSize
+                  .min, // Chiều cao của dialog được căn chỉnh với nội dung
           children: [
-            Icon(Icons.close, color: Colors.red, size: 100),
+            Icon(
+              Icons.close,
+              color: Colors.red,
+              size: 100,
+            ), // Biểu tượng xóa (màu đỏ, cỡ lớn)
             Text(
-              'Chắc chắn xóa đơn hàng',
-              textAlign: TextAlign.center,
+              'Chắc chắn xóa đơn hàng', // Nội dung thông báo
+              textAlign: TextAlign.center, // Căn giữa văn bản
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                fontFamily: AppStyle.fontFamily,
+                fontFamily: AppStyle.fontFamily, // Font chữ tùy chỉnh
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 24), // Khoảng cách giữa các widget
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context, true); // đóng dialog, không xóa
+                      Navigator.pop(
+                        context,
+                        true,
+                      ); // Đóng dialog mà không xóa sản phẩm
                     },
-                    child: Text('Quay lại'),
+                    child: Text('Quay lại'), // Nút quay lại
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 12), // Khoảng cách giữa hai nút
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      print('ĐÃ NHẤN XÁC NHẬN'); //
+                      print(
+                        'ĐÃ NHẤN XÁC NHẬN',
+                      ); // In ra thông báo khi người dùng xác nhận xóa
                       try {
-                        await _au.hidenProducts(id);
-
-                        Navigator.pop(context, true);
+                        await _au.hidenProducts(
+                          id,
+                        ); // Gọi phương thức để xóa sản phẩm từ Firebase
+                        Navigator.pop(
+                          context,
+                          true,
+                        ); // Đóng dialog sau khi xóa thành công
                       } catch (e, st) {
-                        print('‼️ Lỗi khi showDialog: $e\n$st');
+                        print(
+                          '‼️ Lỗi khi showDialog: $e\n$st',
+                        ); // In ra lỗi nếu có sự cố xảy ra
                       }
                     },
-                    child: Text('Xác nhận'),
+                    child: Text('Xác nhận'), // Nút xác nhận xóa
                   ),
                 ),
               ],
